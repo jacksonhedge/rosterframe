@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // Database types
 export interface LeagueData {
@@ -114,13 +114,24 @@ export interface Database {
   };
 }
 
-// Create Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create Supabase client only if environment variables are available
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  : null;
+
+// Helper function to check if Supabase is configured
+export const isSupabaseConfigured = () => {
+  return !!(supabaseUrl && supabaseAnonKey && supabase);
+};
 
 // Helper functions for data operations
 export class SupabaseService {
   // Save league data (upsert to avoid duplicates)
   static async saveLeague(leagueData: Database['public']['Tables']['leagues']['Insert']) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     const { data, error } = await supabase
       .from('leagues')
       .upsert(leagueData, {
@@ -139,6 +150,10 @@ export class SupabaseService {
 
   // Save user team data
   static async saveUserTeam(teamData: Database['public']['Tables']['user_teams']['Insert']) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     const { data, error } = await supabase
       .from('user_teams')
       .upsert(teamData, {
@@ -157,6 +172,10 @@ export class SupabaseService {
 
   // Save roster data
   static async saveRoster(rosterData: Database['public']['Tables']['rosters']['Insert']) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     const { data, error } = await supabase
       .from('rosters')
       .upsert(rosterData, {
@@ -175,6 +194,10 @@ export class SupabaseService {
 
   // Save league outcome
   static async saveLeagueOutcome(outcomeData: Database['public']['Tables']['league_outcomes']['Insert']) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     const { data, error } = await supabase
       .from('league_outcomes')
       .upsert(outcomeData, {
@@ -193,6 +216,10 @@ export class SupabaseService {
 
   // Save player data
   static async savePlayer(playerData: Database['public']['Tables']['players']['Insert']) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     const { data, error } = await supabase
       .from('players')
       .upsert(playerData, {
@@ -217,6 +244,10 @@ export class SupabaseService {
     outcome?: Database['public']['Tables']['league_outcomes']['Insert'],
     players?: Database['public']['Tables']['players']['Insert'][]
   ) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     try {
       // Save league
       const leagueResult = await this.saveLeague(league);
@@ -267,6 +298,10 @@ export class SupabaseService {
 
   // Get existing league data
   static async getLeagueData(leagueId: string, season?: string) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     let query = supabase
       .from('leagues')
       .select(`
@@ -293,6 +328,10 @@ export class SupabaseService {
 
   // Check if league already exists
   static async leagueExists(leagueId: string, season: string) {
+    if (!supabase) {
+      return { success: false, error: 'Supabase not configured' };
+    }
+
     const { data, error } = await supabase
       .from('leagues')
       .select('id')

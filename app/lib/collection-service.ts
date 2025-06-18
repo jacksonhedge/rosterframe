@@ -11,15 +11,17 @@ import {
   CollectionSearchResult
 } from './collection-types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export class CollectionService {
   private static instance: CollectionService;
   public supabase;
 
   constructor() {
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = supabaseUrl && supabaseKey 
+      ? createClient(supabaseUrl, supabaseKey)
+      : null;
   }
 
   public static getInstance(): CollectionService {
@@ -29,19 +31,27 @@ export class CollectionService {
     return CollectionService.instance;
   }
 
+  private isConfigured(): boolean {
+    return !!this.supabase;
+  }
+
   // Analyze rostered players across all leagues
   async analyzeRosteredPlayers() {
+    if (!this.isConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
     console.log('Analyzing rostered players across all leagues...');
 
     // Get all current rosters from Sleeper data
-    const { data: rosters, error: rostersError } = await this.supabase
+    const { data: rosters, error: rostersError } = await this.supabase!
       .from('rosters')
       .select('*');
 
     if (rostersError) throw rostersError;
 
     // Get all leagues to calculate totals
-    const { data: leagues, error: leaguesError } = await this.supabase
+    const { data: leagues, error: leaguesError } = await this.supabase!
       .from('sleeper_leagues')
       .select('sleeper_league_id');
 
@@ -154,7 +164,7 @@ export class CollectionService {
       };
 
       try {
-        const { data, error } = await this.supabase
+        const { data, error } = await this.supabase!
           .from('target_players')
           .insert(playerData)
           .select('*')
@@ -215,7 +225,11 @@ export class CollectionService {
 
   // Get all target players with filters
   async getTargetPlayers(filters: any = {}) {
-    let query = this.supabase
+    if (!this.isConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    let query = this.supabase!
       .from('target_players')
       .select('*');
 
@@ -248,6 +262,10 @@ export class CollectionService {
 
   // Update collection status
   async updateCollectionStatus(targetPlayerId: string, status: string, priority?: number) {
+    if (!this.isConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
     const updateData: any = {
       collection_status: status,
       updated_at: new Date().toISOString()
@@ -257,7 +275,7 @@ export class CollectionService {
       updateData.priority_level = priority;
     }
 
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabase!
       .from('target_players')
       .update(updateData)
       .eq('id', targetPlayerId)
@@ -270,7 +288,11 @@ export class CollectionService {
 
   // Add a collection item (card owned/wanted)
   async addCollectionItem(itemData: any) {
-    const { data, error } = await this.supabase
+    if (!this.isConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    const { data, error } = await this.supabase!
       .from('player_collection_items')
       .insert(itemData)
       .select('*')
@@ -282,7 +304,11 @@ export class CollectionService {
 
   // Get collection statistics
   async getCollectionStats() {
-    const { data: targetPlayers } = await this.supabase
+    if (!this.isConfigured()) {
+      return this.getEmptyStats();
+    }
+
+    const { data: targetPlayers } = await this.supabase!
       .from('target_players')
       .select('collection_status, priority_level, position, cards_owned, cards_wanted');
 
@@ -344,7 +370,11 @@ export class CollectionService {
 
   // Add a public method for creating target players
   async createTargetPlayer(targetPlayerData: any) {
-    const { data, error } = await this.supabase
+    if (!this.isConfigured()) {
+      throw new Error('Supabase not configured');
+    }
+
+    const { data, error } = await this.supabase!
       .from('target_players')
       .insert(targetPlayerData)
       .select('*')
