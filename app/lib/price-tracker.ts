@@ -1,15 +1,31 @@
 import { CardService } from './card-service';
 
+// Price tracking and market analysis functionality
 export class PriceTracker {
-  private cardService: CardService;
+  private static instance: PriceTracker;
+  private cardService: CardService | null = null;
 
   constructor() {
-    this.cardService = CardService.getInstance();
+    // Don't initialize cardService during construction to avoid build-time issues
+  }
+
+  private getCardService(): CardService {
+    if (!this.cardService) {
+      this.cardService = CardService.getInstance();
+    }
+    return this.cardService;
+  }
+
+  public static getInstance(): PriceTracker {
+    if (!PriceTracker.instance) {
+      PriceTracker.instance = new PriceTracker();
+    }
+    return PriceTracker.instance;
   }
 
   // Track prices from multiple sources
   async updateCardPrices(cardId: string) {
-    const card = await this.cardService.getCard(cardId);
+    const card = await this.getCardService().getCard(cardId);
     if (!card) return;
 
     const prices = await Promise.allSettled([
@@ -30,7 +46,7 @@ export class PriceTracker {
       
       const trend = await this.calculateTrend(cardId, averagePrice);
       
-      await this.cardService.updateMarketData({
+      await this.getCardService().updateMarketData({
         card_id: cardId,
         current_market_value: averagePrice,
         last_sale_price: priceData[0]?.price,
@@ -90,7 +106,7 @@ export class PriceTracker {
 
   private async calculateTrend(cardId: string, currentPrice: number): Promise<'up' | 'down' | 'stable'> {
     // Get historical prices
-    const historicalData = await this.cardService.getMarketData(cardId);
+    const historicalData = await this.getCardService().getMarketData(cardId);
     
     if (historicalData.length < 2) return 'stable';
     
@@ -128,7 +144,7 @@ export class PriceTracker {
 
 // Cron job setup
 export async function schedulePriceUpdates() {
-  const tracker = new PriceTracker();
+  const tracker = PriceTracker.getInstance();
   
   // Run every day at 2 AM
   setInterval(async () => {

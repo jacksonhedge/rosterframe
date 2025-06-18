@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import cardService from '../../../lib/card-service';
+import { CardService } from '../../../lib/card-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const sportId = searchParams.get('sport_id') || undefined;
     const searchTerm = searchParams.get('search') || undefined;
 
+    const cardService = CardService.getInstance();
     const players = await cardService.getPlayers(sportId, searchTerm);
 
     return NextResponse.json({
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cardService = CardService.getInstance();
     const player = await cardService.createPlayer(playerData);
 
     return NextResponse.json({

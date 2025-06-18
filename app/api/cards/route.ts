@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import cardService from '../../lib/card-service';
+import CardService from '../../lib/card-service';
 import { CardSearchFilters } from '../../lib/card-types';
 
 export async function GET(request: NextRequest) {
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
 
+    const cardService = CardService.getInstance();
     const result = await cardService.searchCards(filters, page, limit);
 
     return NextResponse.json({
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cardService = CardService.getInstance();
     const card = await cardService.createCard(cardData);
 
     return NextResponse.json({

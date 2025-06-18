@@ -34,15 +34,17 @@ import {
   SellerSearchFilters
 } from './card-types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export class CardService {
   private static instance: CardService;
   private supabase;
 
   constructor() {
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabase = supabaseUrl && supabaseKey 
+      ? createClient(supabaseUrl, supabaseKey)
+      : null;
   }
 
   public static getInstance(): CardService {
@@ -52,10 +54,25 @@ export class CardService {
     return CardService.instance;
   }
 
+  private isConfigured(): boolean {
+    return !!this.supabase;
+  }
+
+  private getSupabase() {
+    if (!this.supabase) {
+      throw new Error('Supabase not configured - check environment variables');
+    }
+    return this.supabase;
+  }
+
   // Reference Data Methods
 
   async getSports(): Promise<Sport[]> {
-    const { data, error } = await this.supabase
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await this.getSupabase()
       .from('card_sports')
       .select('*')
       .order('name');
@@ -65,7 +82,11 @@ export class CardService {
   }
 
   async getPositions(sportId?: string): Promise<Position[]> {
-    let query = this.supabase
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    let query = this.getSupabase()
       .from('card_positions')
       .select(`
         *,
@@ -83,7 +104,11 @@ export class CardService {
   }
 
   async getTeams(sportId?: string): Promise<Team[]> {
-    let query = this.supabase
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    let query = this.getSupabase()
       .from('card_teams')
       .select(`
         *,
@@ -102,7 +127,11 @@ export class CardService {
   }
 
   async getManufacturers(): Promise<CardManufacturer[]> {
-    const { data, error } = await this.supabase
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await this.getSupabase()
       .from('card_manufacturers')
       .select('*')
       .order('name');
@@ -112,7 +141,11 @@ export class CardService {
   }
 
   async getGradingCompanies(): Promise<GradingCompany[]> {
-    const { data, error } = await this.supabase
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    const { data, error } = await this.getSupabase()
       .from('grading_companies')
       .select('*')
       .order('name');
@@ -124,7 +157,7 @@ export class CardService {
   // Player Methods
 
   async createPlayer(playerData: CreatePlayerInput): Promise<Player> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.getSupabase()
       .from('card_players')
       .insert(playerData)
       .select(`
@@ -139,7 +172,11 @@ export class CardService {
   }
 
   async getPlayers(sportId?: string, searchTerm?: string): Promise<Player[]> {
-    let query = this.supabase
+    if (!this.isConfigured()) {
+      return [];
+    }
+
+    let query = this.getSupabase()
       .from('card_players')
       .select(`
         *,
@@ -162,7 +199,11 @@ export class CardService {
   }
 
   async getPlayer(id: string): Promise<Player | null> {
-    const { data, error } = await this.supabase
+    if (!this.isConfigured()) {
+      return null;
+    }
+
+    const { data, error } = await this.getSupabase()
       .from('card_players')
       .select(`
         *,
@@ -1019,6 +1060,5 @@ export class CardService {
   }
 }
 
-// Export singleton instance
-const cardService = CardService.getInstance();
-export default cardService; 
+// Export the class, not an instance
+export default CardService; 
