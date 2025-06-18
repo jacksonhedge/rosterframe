@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useState } from "react";
 import StripePaymentForm from "../components/StripePaymentForm";
 
+// Type definitions
+interface CardOption {
+  id: string;
+  playerName: string;
+  year: string;
+  condition: string;
+  price: number;
+  rarity: string;
+}
+
 export default function BuildAndBuy() {
   const [currentStep, setCurrentStep] = useState<'setup' | 'building' | 'cards' | 'purchase' | 'done'>('setup');
   const [teamName, setTeamName] = useState<string>("");
@@ -57,7 +67,7 @@ export default function BuildAndBuy() {
   ];
 
   // Generate card options for a player
-  const generateCardOptions = (playerName: string) => {
+  const generateCardOptions = (playerName: string): CardOption[] => {
     if (!playerName.trim()) return [];
     
     return [
@@ -128,7 +138,7 @@ export default function BuildAndBuy() {
     }
   };
 
-  const selectCard = (positionId: string, card: any) => {
+  const selectCard = (positionId: string, card: CardOption) => {
     setSelectedCards({
       ...selectedCards,
       [positionId]: card
@@ -383,7 +393,7 @@ export default function BuildAndBuy() {
                           />
                         </button>
                         <span className="text-sm text-amber-600 italic">
-                          {isGift ? 'Perfect for gifting!' : 'Optional'}
+                          {isGift ? "Perfect for gifting!" : "Optional"}
                         </span>
                       </div>
                     </div>
@@ -810,7 +820,7 @@ export default function BuildAndBuy() {
                         {isPreOrder && (
                           <div className="text-center pt-2">
                             <span className="text-sm text-blue-600 font-medium">
-                              💰 You're saving ${calculateSavings().toFixed(2)} with pre-order!
+                              💰 You are saving ${calculateSavings().toFixed(2)} with pre-order!
                             </span>
                           </div>
                         )}
@@ -923,7 +933,7 @@ export default function BuildAndBuy() {
                       </span>
                     </div>
                     <p className="text-blue-600 text-sm mt-2 text-center">
-                      We'll email you updates on production progress and shipping details.
+                      We will email you updates on production progress and shipping details.
                     </p>
                   </div>
                 )}
@@ -974,7 +984,7 @@ export default function BuildAndBuy() {
 
               <div className="space-y-4">
                 <p className="text-sm text-amber-600">
-                  We'll send you email updates about your order progress and tracking information.
+                  We will email you updates about your order progress and tracking information.
                 </p>
                 <div className="flex space-x-4">
                   <button

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, isStripeConfigured, createPaymentIntent } from '@/app/lib/stripe';
+import { isStripeConfigured, createPaymentIntent } from '@/app/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
       paymentIntentId: paymentIntent.id,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Payment intent creation failed:', error);
     
     return NextResponse.json(
       { 
         error: 'Failed to create payment intent',
-        message: error?.message || 'Unknown error occurred'
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
       },
       { status: 500 }
     );

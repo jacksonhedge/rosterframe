@@ -83,36 +83,57 @@ function CheckoutForm({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements || !clientSecret) {
+    if (!stripe || !elements) {
       return;
     }
 
     setIsLoading(true);
 
-    const cardElement = elements.getElement(CardElement);
-
-    if (!cardElement) {
-      onPaymentError('Card element not found');
-      setIsLoading(false);
-      return;
-    }
-
-    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-        billing_details: {
-          name: customerInfo.teamName,
-          email: customerInfo.email,
+    try {
+      // Create payment intent
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      },
-    });
+        body: JSON.stringify({
+          amount,
+          metadata: {
+            team_name: customerInfo.teamName,
+            is_gift: customerInfo.isGift.toString(),
+            plaque_name: orderDetails.plaqueName,
+            num_positions: orderDetails.numPositions.toString(),
+            num_cards: orderDetails.numCards.toString(),
+            is_pre_order: orderDetails.isPreOrder?.toString() || 'false',
+            pre_order_savings: orderDetails.savings?.toString() || '0',
+            expected_delivery: orderDetails.isPreOrder ? 'March 2025' : '7-10 business days',
+          },
+        }),
+      });
 
-    setIsLoading(false);
+      const { clientSecret } = await response.json();
 
-    if (error) {
-      onPaymentError(error.message || 'Payment failed');
-    } else if (paymentIntent.status === 'succeeded') {
-      onPaymentSuccess(paymentIntent.id);
+      // Confirm payment
+      const { error: stripeError } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: `${window.location.origin}/build-and-buy?payment=success`,
+        },
+        redirect: 'if_required',
+      });
+
+      if (stripeError) {
+        onPaymentError(stripeError.message || 'Payment failed');
+      } else {
+        if (onPaymentSuccess) {
+          onPaymentSuccess(clientSecret);
+        }
+      }
+    } catch {
+      onPaymentError('Payment failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 

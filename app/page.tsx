@@ -11,7 +11,19 @@ export default function Home() {
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-amber-900">Roster Frame</h1>
             </div>
-            <div>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/secret-sleeper"
+                className="text-amber-700 hover:text-amber-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Secret Sleeper
+              </Link>
+              <Link
+                href="/sleeper-code-graph"
+                className="text-amber-700 hover:text-amber-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Code Graph
+              </Link>
               <Link
                 href="/build-and-buy"
                 className="bg-gradient-to-r from-amber-700 to-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-amber-800 hover:to-yellow-700 transition-all shadow-md"

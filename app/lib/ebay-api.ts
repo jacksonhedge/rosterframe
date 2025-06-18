@@ -72,9 +72,40 @@ export async function searchEbayCards(playerName: string): Promise<EbayCard[]> {
   }
 
   try {
-    // For now, we'll return mock data that simulates eBay API responses
-    // In production, you would replace this with actual eBay API calls
-    const mockCards = generateMockEbayCards(playerName);
+    // Placeholder implementation - returns mock data
+    console.log(`Searching eBay for cards of: ${playerName}`);
+    
+    // Mock data for development
+    const mockCards: EbayCard[] = [
+      {
+        id: '1',
+        name: playerName,
+        year: 2023,
+        brand: 'Panini',
+        series: 'Rookie Card',
+        price: 19.99,
+        rarity: 'common',
+        imageUrl: '/placeholder-card.jpg',
+        condition: 'Near Mint',
+        seller: 'SportsCardsPro',
+        shipping: 2.99,
+        listingUrl: '#'
+      },
+      {
+        id: '2',
+        name: playerName,
+        year: 2022,
+        brand: 'Topps',
+        series: 'Autograph Card',
+        price: 49.99,
+        rarity: 'common',
+        imageUrl: '/placeholder-card.jpg',
+        condition: 'Mint',
+        seller: 'CardCentral',
+        shipping: 2.99,
+        listingUrl: '#'
+      }
+    ];
     
     cardsCache.set(cacheKey, mockCards);
     return mockCards;
