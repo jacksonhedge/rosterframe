@@ -164,9 +164,21 @@ export default function AdminPreviewMaker() {
   };
 
   const positions = getPositionsForCount(plaqueType);
+  
+  // Track if we're actively editing to prevent auto-loading
+  const [isEditing, setIsEditing] = useState(false);
+  const [lastLoadedLayout, setLastLoadedLayout] = useState<string | null>(null);
 
   // Load saved complete layout when plaque selection changes
   useEffect(() => {
+    // Don't auto-load if user is actively editing
+    if (isEditing) return;
+    
+    const layoutKey = `${selectedPlaqueOption.plaqueType}-${selectedPlaqueOption.style}-${showCardBacks}`;
+    
+    // Don't reload the same layout
+    if (layoutKey === lastLoadedLayout) return;
+    
     const savedLayouts = JSON.parse(localStorage.getItem('completePlaqueLayouts') || '[]');
     const matchingLayout = savedLayouts.find((layout: any) => 
       layout.plaqueType === selectedPlaqueOption.plaqueType && 
@@ -175,6 +187,8 @@ export default function AdminPreviewMaker() {
     );
     
     if (matchingLayout) {
+      console.log('Loading saved layout:', matchingLayout);
+      
       // Apply the saved layout
       setTeamName(matchingLayout.teamName || 'Test Team');
       setTestCards(matchingLayout.testCards || []);
@@ -184,12 +198,23 @@ export default function AdminPreviewMaker() {
       setHorizontalOffset(matchingLayout.horizontalOffset || 0);
       setVerticalOffset(matchingLayout.verticalOffset || 0);
       
+      setLastLoadedLayout(layoutKey);
+      
       setStatus({ 
         type: 'info', 
         message: `Loaded saved layout for ${selectedPlaqueOption.slots} cards on ${selectedPlaqueOption.material}` 
       });
+    } else {
+      // Reset to defaults if no saved layout
+      setTestCards([]);
+      setSelectedPositions({});
+      setCardSizeAdjustment(100);
+      setCardSpacingAdjustment(100);
+      setHorizontalOffset(0);
+      setVerticalOffset(0);
+      setLastLoadedLayout(null);
     }
-  }, [selectedPlaqueOption, showCardBacks]);
+  }, [selectedPlaqueOption, showCardBacks, isEditing]);
 
   const presetCards = [
     {
@@ -245,6 +270,8 @@ export default function AdminPreviewMaker() {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
+    
+    setIsEditing(true); // Mark as editing when adding cards
 
     Array.from(files).forEach((file, index) => {
       const reader = new FileReader();
@@ -1349,6 +1376,13 @@ export default function AdminPreviewMaker() {
                   <div className="mt-4 space-y-2">
                     <button
                       onClick={() => {
+                        console.log('Saving layout with:', {
+                          testCards: testCards.length,
+                          selectedPositions,
+                          plaqueType,
+                          plaqueStyle: selectedPlaqueOption.style
+                        });
+                        
                         // Create complete layout configuration including card data
                         const layoutConfig = {
                           id: Date.now().toString(),
@@ -1368,40 +1402,56 @@ export default function AdminPreviewMaker() {
                           timestamp: new Date().toISOString()
                         };
                         
-                        // Save complete layout to localStorage
-                        const savedLayouts = JSON.parse(localStorage.getItem('completePlaqueLayouts') || '[]');
-                        
-                        // Remove any existing layout for this exact plaque configuration
-                        const filteredLayouts = savedLayouts.filter((layout: any) => 
-                          !(layout.plaqueType === layoutConfig.plaqueType && 
-                            layout.plaqueStyle === layoutConfig.plaqueStyle &&
-                            layout.isBackView === layoutConfig.isBackView)
-                        );
-                        
-                        // Add the new layout
-                        filteredLayouts.push(layoutConfig);
-                        localStorage.setItem('completePlaqueLayouts', JSON.stringify(filteredLayouts));
-                        
-                        // Also save just the adjustments for backward compatibility
-                        const adjustmentsOnly = {
-                          plaqueType,
-                          plaqueStyle: selectedPlaqueOption.style,
-                          material: selectedPlaqueOption.material,
-                          cardSizeAdjustment,
-                          cardSpacingAdjustment,
-                          horizontalOffset,
-                          verticalOffset,
-                          isBackView: selectedPlaqueOption.hasBackOption && showCardBacks,
-                          timestamp: new Date().toISOString()
-                        };
-                        const savedAdjustments = JSON.parse(localStorage.getItem('plaqueLayouts') || '[]');
-                        savedAdjustments.push(adjustmentsOnly);
-                        localStorage.setItem('plaqueLayouts', JSON.stringify(savedAdjustments));
-                        
-                        setStatus({ 
-                          type: 'success', 
-                          message: `Complete layout saved: ${selectedPlaqueOption.slots} cards on ${selectedPlaqueOption.material} with card placements` 
-                        });
+                        try {
+                          // Save complete layout to localStorage
+                          const savedLayouts = JSON.parse(localStorage.getItem('completePlaqueLayouts') || '[]');
+                          
+                          // Remove any existing layout for this exact plaque configuration
+                          const filteredLayouts = savedLayouts.filter((layout: any) => 
+                            !(layout.plaqueType === layoutConfig.plaqueType && 
+                              layout.plaqueStyle === layoutConfig.plaqueStyle &&
+                              layout.isBackView === layoutConfig.isBackView)
+                          );
+                          
+                          // Add the new layout
+                          filteredLayouts.push(layoutConfig);
+                          localStorage.setItem('completePlaqueLayouts', JSON.stringify(filteredLayouts));
+                          
+                          // Update the last loaded layout key to prevent reload
+                          const layoutKey = `${layoutConfig.plaqueType}-${layoutConfig.plaqueStyle}-${layoutConfig.isBackView}`;
+                          setLastLoadedLayout(layoutKey);
+                          setIsEditing(false);
+                          
+                          console.log('Layout saved successfully:', layoutConfig);
+                          console.log('Total saved layouts:', filteredLayouts.length);
+                          
+                          // Also save just the adjustments for backward compatibility
+                          const adjustmentsOnly = {
+                            plaqueType,
+                            plaqueStyle: selectedPlaqueOption.style,
+                            material: selectedPlaqueOption.material,
+                            cardSizeAdjustment,
+                            cardSpacingAdjustment,
+                            horizontalOffset,
+                            verticalOffset,
+                            isBackView: selectedPlaqueOption.hasBackOption && showCardBacks,
+                            timestamp: new Date().toISOString()
+                          };
+                          const savedAdjustments = JSON.parse(localStorage.getItem('plaqueLayouts') || '[]');
+                          savedAdjustments.push(adjustmentsOnly);
+                          localStorage.setItem('plaqueLayouts', JSON.stringify(savedAdjustments));
+                          
+                          setStatus({ 
+                            type: 'success', 
+                            message: `Complete layout saved: ${selectedPlaqueOption.slots} cards on ${selectedPlaqueOption.material} with ${testCards.length} cards` 
+                          });
+                        } catch (error) {
+                          console.error('Error saving layout:', error);
+                          setStatus({ 
+                            type: 'error', 
+                            message: 'Failed to save layout. Please try again.' 
+                          });
+                        }
                       }}
                       className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
                     >
@@ -1520,6 +1570,55 @@ export default function AdminPreviewMaker() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Debug Panel */}
+      <div className="fixed bottom-4 right-4 bg-black bg-opacity-90 text-white p-4 rounded-lg max-w-xs z-50">
+        <h4 className="font-bold mb-2 text-yellow-400">🔧 Debug Save System</h4>
+        <div className="text-xs space-y-1">
+          <div>Plaque: {selectedPlaqueOption.material} ({selectedPlaqueOption.plaqueType} cards)</div>
+          <div>Cards Added: {testCards.length}</div>
+          <div>Cards Assigned: {Object.keys(selectedPositions).length}</div>
+          <div>Editing Mode: {isEditing ? '✅ Yes' : '❌ No'}</div>
+          <div className="mt-3 space-y-2">
+            <button
+              onClick={() => {
+                const saved = localStorage.getItem('completePlaqueLayouts');
+                const layouts = saved ? JSON.parse(saved) : [];
+                const currentLayout = layouts.find((l: any) => 
+                  l.plaqueType === selectedPlaqueOption.plaqueType && 
+                  l.plaqueStyle === selectedPlaqueOption.style
+                );
+                console.log('All saved layouts:', layouts);
+                console.log('Current plaque saved data:', currentLayout);
+                alert(`Total saved layouts: ${layouts.length}\n` +
+                      `Current plaque has saved data: ${currentLayout ? 'Yes' : 'No'}\n` +
+                      `Check console for details.`);
+              }}
+              className="w-full bg-blue-500 px-2 py-1 rounded text-xs hover:bg-blue-600"
+            >
+              🔍 Check Saved Layouts
+            </button>
+            <button
+              onClick={() => {
+                if (confirm('Clear all saved layouts?')) {
+                  localStorage.removeItem('completePlaqueLayouts');
+                  localStorage.removeItem('plaqueLayouts');
+                  setStatus({ type: 'info', message: 'All saved layouts cleared!' });
+                }
+              }}
+              className="w-full bg-red-500 px-2 py-1 rounded text-xs hover:bg-red-600"
+            >
+              🗑️ Clear All Saved Data
+            </button>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="w-full bg-purple-500 px-2 py-1 rounded text-xs hover:bg-purple-600"
+            >
+              {isEditing ? '🔓 Unlock Auto-Load' : '🔒 Lock for Editing'}
+            </button>
           </div>
         </div>
       </div>

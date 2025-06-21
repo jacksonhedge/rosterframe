@@ -1,0 +1,26 @@
+{
+  "previewId": "fb2bffa3-0636-4f1c-b570-8b2918b1442a",
+  "imageUrl": "/uploads/previews/fb2bffa3-0636-4f1c-b570-8b2918b1442a.png",
+  "downloadUrl": "/api/preview/fb2bffa3-0636-4f1c-b570-8b2918b1442a/download",
+  "createdAt": "2025-06-21T17:11:45.485Z",
+  "configuration": {
+    "plaqueType": "10",
+    "plaqueStyle": "dark-maple-wood",
+    "teamName": "Team",
+    "playerCards": [
+      {
+        "id": "1-default",
+        "playerName": "X",
+        "position": "Quarterback",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      }
+    ],
+    "isLivePreview": true
+  }
+}
