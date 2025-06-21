@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { CardService } from '../../../lib/card-service';
 
 export async function GET(request: NextRequest) {
+  // Check authentication
+  const cookieStore = cookies();
+  const adminAuth = cookieStore.get('admin-authenticated');
+  
+  if (!adminAuth || adminAuth.value !== 'true') {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   try {
     const cardService = CardService.getInstance();
 

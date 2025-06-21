@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import AdminAuth from '@/app/components/AdminAuth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -100,7 +101,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+    <AdminAuth>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
       {/* Sidebar */}
       <div className={`bg-white shadow-xl border-r border-slate-200 transition-all duration-300 flex flex-col ${
         sidebarCollapsed ? 'w-16' : 'w-64'
@@ -236,5 +238,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
     </div>
+    </AdminAuth>
   );
 } 
