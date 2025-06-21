@@ -431,7 +431,7 @@ export default function AdminPreviewMaker() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-slate-700 mb-3">Select Material:</h3>
             <div className="flex flex-wrap gap-3">
-              {['All', 'Blank', 'Dark Maple Wood', 'Clear Plaque', 'Black Marble'].map((material) => (
+              {['All', 'Dark Maple Wood', 'Clear Plaque', 'Black Marble'].map((material) => (
                 <button
                   key={material}
                   onClick={() => setMaterialFilter(material)}
@@ -479,62 +479,99 @@ export default function AdminPreviewMaker() {
             </div>
           </div>
           
-          {/* Filtered Plaque Options Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto p-1">
-            {plaqueOptions
-              .filter(option => {
-                const materialMatch = materialFilter === 'All' || option.material === materialFilter;
-                const countMatch = cardCountFilter === 'All' || option.plaqueType === cardCountFilter;
-                return materialMatch && countMatch;
-              })
-              .map((option) => (
-              <div
-                key={option.id}
-                onClick={() => setSelectedPlaqueOption(option)}
-                className={`cursor-pointer rounded-lg border-2 transition-all ${
-                  selectedPlaqueOption.id === option.id
-                    ? 'border-blue-500 bg-blue-50 shadow-lg'
-                    : 'border-slate-200 hover:border-slate-300 hover:shadow-md'
-                }`}
-              >
-                <div className="p-3">
-                  <div className="relative w-full h-24 rounded overflow-hidden bg-slate-100 mb-2">
-                    {option.hasSavedPreview ? (
-                      <img
-                        src={option.image}
-                        alt={option.name}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <Image
-                        src={option.baseImage || option.image}
-                        alt={option.name}
-                        width={200}
-                        height={96}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                    {option.hasSavedPreview && (
-                      <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded">
-                        Saved
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-800">{option.slots} Cards</h3>
-                  <p className="text-xs text-slate-600">{option.material}</p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-sm font-bold text-green-600">
-                      {option.price === 0 ? 'Free' : `$${option.price}`}
-                    </span>
-                    {option.hasBackOption && (
-                      <span className="text-xs bg-purple-100 text-purple-700 px-1 py-0.5 rounded">
-                        F/B
-                      </span>
-                    )}
+          {/* Filtered Plaque Options */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Selected Plaque Preview - Large */}
+            <div className="lg:col-span-1">
+              <div className="bg-blue-50 rounded-xl border-2 border-blue-500 p-4">
+                <h4 className="font-semibold text-blue-800 mb-3 text-center">Selected Plaque</h4>
+                <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                  <Image
+                    src={selectedPlaqueOption.baseImage || selectedPlaqueOption.image}
+                    alt={selectedPlaqueOption.name}
+                    fill
+                    className="object-contain"
+                  />
+                  {/* Overlay card positions */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {(() => {
+                      const layout = previewMaker.getCardPositions(selectedPlaqueOption.plaqueType);
+                      const xavierWorthyCardUrl = 'https://wdwbkuhanclpkbgxgwdg.supabase.co/storage/v1/object/public/card-images/card-images/xavier_worthy_2025_cc1af96a-8680-474e-9f0a-911a98495fe3.jpg';
+                      
+                      return Array.from({ length: parseInt(selectedPlaqueOption.plaqueType) }).map((_, i) => {
+                        const pos = layout.positions[i];
+                        
+                        const leftPercent = (pos.x / layout.imageWidth) * 100;
+                        const topPercent = (pos.y / layout.imageHeight) * 100;
+                        const widthPercent = (pos.width / layout.imageWidth) * 100;
+                        const heightPercent = (pos.height / layout.imageHeight) * 100;
+                        
+                        return (
+                          <div
+                            key={i}
+                            className="absolute overflow-hidden opacity-90 shadow-md"
+                            style={{
+                              left: `${leftPercent}%`,
+                              top: `${topPercent}%`,
+                              width: `${widthPercent}%`,
+                              height: `${heightPercent}%`,
+                            }}
+                          >
+                            <img
+                              src={xavierWorthyCardUrl}
+                              alt="Player Card"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
+                <div className="mt-3 text-center">
+                  <h3 className="font-bold text-lg text-slate-800">{selectedPlaqueOption.slots} Cards</h3>
+                  <p className="text-sm text-slate-600">{selectedPlaqueOption.material}</p>
+                  <p className="text-xl font-bold text-green-600 mt-1">${selectedPlaqueOption.price}</p>
+                </div>
               </div>
-            ))}
+            </div>
+            
+            {/* All Options Grid - Smaller */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[500px] overflow-y-auto p-1">
+                {plaqueOptions
+                  .filter(option => {
+                    const materialMatch = materialFilter === 'All' || option.material === materialFilter;
+                    const countMatch = cardCountFilter === 'All' || option.plaqueType === cardCountFilter;
+                    return materialMatch && countMatch;
+                  })
+                  .map((option) => (
+                  <div
+                    key={option.id}
+                    onClick={() => setSelectedPlaqueOption(option)}
+                    className={`cursor-pointer rounded-lg border-2 transition-all ${
+                      selectedPlaqueOption.id === option.id
+                        ? 'border-blue-500 bg-blue-50 shadow-lg scale-105'
+                        : 'border-slate-200 hover:border-slate-300 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="p-2">
+                      <div className="relative w-full h-20 rounded overflow-hidden bg-slate-100 mb-1">
+                        <Image
+                          src={option.baseImage || option.image}
+                          alt={option.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <h3 className="font-bold text-xs text-slate-800">{option.slots} Cards</h3>
+                      <p className="text-xs text-slate-600">{option.material}</p>
+                      <p className="text-sm font-bold text-green-600">${option.price}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Card Back Option for Clear Plaque */}
