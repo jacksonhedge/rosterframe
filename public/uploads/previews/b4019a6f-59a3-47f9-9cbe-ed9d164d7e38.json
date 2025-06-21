@@ -1,0 +1,110 @@
+{
+  "previewId": "b4019a6f-59a3-47f9-9cbe-ed9d164d7e38",
+  "imageUrl": "/uploads/previews/b4019a6f-59a3-47f9-9cbe-ed9d164d7e38.png",
+  "downloadUrl": "/api/preview/b4019a6f-59a3-47f9-9cbe-ed9d164d7e38/download",
+  "createdAt": "2025-06-20T20:09:12.608Z",
+  "configuration": {
+    "plaqueType": "8",
+    "plaqueStyle": "dark-maple-wood",
+    "teamName": "Matt Scherbs",
+    "playerCards": [
+      {
+        "id": "1-default",
+        "playerName": "M",
+        "position": "Quarterback",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "2-default",
+        "playerName": "n",
+        "position": "Running Back",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "3-default",
+        "playerName": "X",
+        "position": "Running Back",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "4-default",
+        "playerName": "X",
+        "position": "Wide Receiver",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "5-default",
+        "playerName": "X",
+        "position": "Wide Receiver",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "6-default",
+        "playerName": "X",
+        "position": "Flex",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "7-default",
+        "playerName": "D",
+        "position": "Tight End",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "9-default",
+        "playerName": "C",
+        "position": "Kicker",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      }
+    ],
+    "isLivePreview": true
+  }
+}

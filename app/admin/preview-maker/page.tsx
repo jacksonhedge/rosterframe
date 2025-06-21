@@ -59,14 +59,6 @@ export default function AdminPreviewMaker() {
   const generatePlaqueOptions = () => {
     const materials = [
       {
-        style: 'blank',
-        name: 'Blank',
-        basePrice: 0,
-        pricePerSlot: 0,
-        hasBackOption: false,
-        description: 'No plaque - cards only'
-      },
-      {
         style: 'dark-maple-wood',
         name: 'Dark Maple Wood',
         basePrice: 89.99,
@@ -114,8 +106,6 @@ export default function AdminPreviewMaker() {
           imagePath += 'ClearPlaque8.png';
         } else if (material.style === 'black-marble') {
           imagePath += 'BlackMarble8.png';
-        } else if (material.style === 'blank') {
-          imagePath = '/images/blank-plaque.png'; // We'll create this transparent image
         }
 
         // Check if we have a saved preview for this configuration
@@ -134,8 +124,8 @@ export default function AdminPreviewMaker() {
           id: `${material.style}-${count}`,
           plaqueType: count,
           style: material.style,
-          name: `${material.name} ${material.style === 'blank' ? '' : 'Plaque'} (${count} Cards)`,
-          description: `${material.description} ${material.style === 'blank' ? '' : `with ${count} card slots`}`,
+          name: `${material.name} Plaque (${count} Cards)`,
+          description: `${material.description} with ${count} card slots`,
           image: displayImage,
           baseImage: imagePath,
           material: material.name,
@@ -1132,8 +1122,8 @@ export default function AdminPreviewMaker() {
                   
                   {/* Card size controls and info */}
                   <div className="mt-4 space-y-3">
-                    {/* Card size adjustment */}
-                    <div className="bg-slate-50 rounded-lg p-3">
+                      {/* Card size adjustment */}
+                      <div className="bg-slate-50 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <label className="text-sm font-semibold text-slate-700">
                           Card Size Adjustment

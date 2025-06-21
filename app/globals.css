@@ -1,26 +1,294 @@
 @import "tailwindcss";
 
+/* Design System - Brown & Gold Sports Theme */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Color Palette - Brown & Gold Theme */
+  --color-primary: rgb(146, 64, 14);       /* Amber-900 - Rich brown */
+  --color-secondary: rgb(217, 119, 6);     /* Amber-600 - Your brand orange */
+  --color-accent: rgb(245, 158, 11);       /* Amber-500 - Bright gold */
+  --color-success: rgb(34, 197, 94);       /* Green */
+  --color-error: rgb(239, 68, 68);         /* Red */
+  
+  /* Surface Colors */
+  --surface-0: rgb(255, 255, 255);         /* Pure white */
+  --surface-1: rgb(254, 252, 232);         /* Amber-50 - Warm white */
+  --surface-2: rgb(253, 230, 138);         /* Amber-200 - Light gold */
+  --surface-3: rgb(217, 119, 6);          /* Amber-600 - Medium brown */
+  --surface-4: rgb(146, 64, 14);          /* Amber-900 - Dark brown */
+  
+  /* Text Colors */
+  --text-primary: rgb(120, 53, 15);        /* Amber-900 darkened */
+  --text-secondary: rgb(146, 64, 14);      /* Amber-900 */
+  --text-tertiary: rgb(180, 83, 9);       /* Amber-700 */
+  
+  /* Spacing Scale (4px base) */
+  --space-0: 0;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-24: 6rem;     /* 96px */
+  
+  /* Typography Scale */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem;  /* 36px */
+  --text-5xl: 3rem;     /* 48px */
+  
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;  /* 4px */
+  --radius: 0.5rem;      /* 8px */
+  --radius-lg: 0.75rem;  /* 12px */
+  --radius-xl: 1rem;     /* 16px */
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(146, 64, 14, 0.05);
+  --shadow: 0 4px 6px -1px rgba(146, 64, 14, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(146, 64, 14, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(146, 64, 14, 0.1);
+  
+  /* Animation */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  
+  /* Z-index Scale */
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-tooltip: 50;
+  
+  /* Gradients - Brown & Gold */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  --gradient-accent: linear-gradient(135deg, var(--color-secondary), var(--color-accent));
+  
+  /* Dark mode preparation */
+  --background: var(--surface-0);
+  --foreground: var(--text-primary);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
+/* Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --surface-0: rgb(41, 37, 36);        /* Stone-800 - Dark brown */
+    --surface-1: rgb(68, 64, 60);        /* Stone-700 */
+    --surface-2: rgb(87, 83, 78);        /* Stone-600 */
+    --surface-3: rgb(120, 113, 108);     /* Stone-500 */
+    --surface-4: rgb(168, 162, 158);     /* Stone-400 */
+    
+    --text-primary: rgb(245, 158, 11);   /* Amber-500 - Gold text */
+    --text-secondary: rgb(217, 119, 6);  /* Amber-600 */
+    --text-tertiary: rgb(180, 83, 9);    /* Amber-700 */
+    
+    --background: var(--surface-0);
+    --foreground: var(--text-primary);
   }
 }
 
+/* Tailwind Theme Extension */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --font-sans: 'Inter', var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'SF Mono', monospace;
+}
+
+/* Global Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  transition: background-color var(--duration-normal) var(--ease-out);
+}
+
+/* Responsive Font Size */
+@media (min-width: 768px) {
+  body {
+    font-size: 1.125rem; /* 18px on tablet and up */
+  }
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-primary);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: var(--radius);
+  border: 3px solid var(--surface-1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-4);
+}
+
+/* Utility Classes */
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  max-width: 1280px;
+}
+
+/* Animation Classes */
+.transition-base {
+  transition-property: all;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-out);
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scroll Animation Classes */
+.scroll-fade {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all var(--duration-slow) var(--ease-out);
+}
+
+.scroll-fade.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card Hover Effect */
+.card-hover {
+  transition: transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Button Base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-6);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius);
+  transition: all var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  font-size: var(--text-base);
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.btn-secondary {
+  background: var(--surface-0);
+  color: var(--text-primary);
+  border: 2px solid var(--color-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-accent {
+  background: var(--gradient-accent);
+  color: white;
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading Animation */
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

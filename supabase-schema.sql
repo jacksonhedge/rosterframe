@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS rosters (
     players TEXT[],
     starters TEXT[],
     settings JSONB,
-    metadata JSONB,
+    metadata JSONB,a
     UNIQUE(sleeper_league_id, roster_id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

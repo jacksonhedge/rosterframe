@@ -1,0 +1,38 @@
+{
+  "previewId": "a095b64e-06de-412a-be87-19bfbf0604fe",
+  "imageUrl": "/uploads/previews/a095b64e-06de-412a-be87-19bfbf0604fe.png",
+  "downloadUrl": "/api/preview/a095b64e-06de-412a-be87-19bfbf0604fe/download",
+  "createdAt": "2025-06-20T02:50:40.369Z",
+  "configuration": {
+    "plaqueType": "8",
+    "plaqueStyle": "dark-maple-wood",
+    "teamName": "Test Team",
+    "playerCards": [
+      {
+        "id": "upload-1750387822187-0",
+        "playerName": "Unknown Player",
+        "position": "QB",
+        "year": 2025,
+        "brand": "Topps Chrome",
+        "series": "Base Set",
+        "imageUrl": "https://wdwbkuhanclpkbgxgwdg.supabase.co/storage/v1/object/public/card-images/card-images/xavier_worthy_2025_cc1af96a-8680-474e-9f0a-911a98495fe3.jpg",
+        "rarity": "common",
+        "price": 50,
+        "shipping": 5
+      },
+      {
+        "id": "upload-1750387822187-0",
+        "playerName": "Unknown Player",
+        "position": "QB",
+        "year": 2025,
+        "brand": "Topps Chrome",
+        "series": "Base Set",
+        "imageUrl": "https://wdwbkuhanclpkbgxgwdg.supabase.co/storage/v1/object/public/card-images/card-images/xavier_worthy_2025_cc1af96a-8680-474e-9f0a-911a98495fe3.jpg",
+        "rarity": "common",
+        "price": 50,
+        "shipping": 5
+      }
+    ],
+    "showCardBacks": false
+  }
+}

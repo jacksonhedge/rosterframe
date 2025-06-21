@@ -1,0 +1,50 @@
+{
+  "previewId": "1e48a277-bdb9-40a9-a0cd-691e3caa2693",
+  "imageUrl": "/uploads/previews/1e48a277-bdb9-40a9-a0cd-691e3caa2693.png",
+  "downloadUrl": "/api/preview/1e48a277-bdb9-40a9-a0cd-691e3caa2693/download",
+  "createdAt": "2025-06-20T19:53:02.020Z",
+  "configuration": {
+    "plaqueType": "8",
+    "plaqueStyle": "dark-maple-wood",
+    "teamName": "Team",
+    "playerCards": [
+      {
+        "id": "1-default",
+        "playerName": "X",
+        "position": "Quarterback",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "2-default",
+        "playerName": "A",
+        "position": "Running Back",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "3-default",
+        "playerName": "X",
+        "position": "Wide Receiver",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      }
+    ],
+    "isLivePreview": true
+  }
+}

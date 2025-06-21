@@ -1,0 +1,5 @@
+This is a test file to verify that Claude Code notifications are working properly.
+
+If you see a notification after this file is created, then the notification system is set up correctly!
+
+Created at: $(date)

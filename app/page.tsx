@@ -1,116 +1,147 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Navigation } from "./components/ui/Navigation";
+import { Hero } from "./components/ui/Hero";
+import { ScrollFade, StaggeredContainer } from "./components/animations/ScrollFade";
+import { Button } from "./components/ui/Button";
 
 export default function Home() {
+  const features = [
+    {
+      icon: (
+        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      ),
+      title: "Premium Materials",
+      description: "High-quality wood, glass, and acrylic frames designed to showcase your championship roster"
+    },
+    {
+      icon: (
+        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+      title: "Fantasy Champions",
+      description: "Perfect for football and baseball fantasy league winners who want to immortalize their victory"
+    },
+    {
+      icon: (
+        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+      title: "Complete Solution",
+      description: "Order your custom frame and player cards together in one seamless checkout experience"
+    }
+  ];
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-sm shadow-sm relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold text-amber-900">Roster Frame</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/secret-sleeper"
-                className="text-amber-700 hover:text-amber-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Secret Sleeper
-              </Link>
-              <Link
-                href="/sleeper-code-graph"
-                className="text-amber-700 hover:text-amber-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Code Graph
-              </Link>
-              <Link
-                href="/build-and-buy"
-                className="bg-gradient-to-r from-amber-700 to-yellow-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-amber-800 hover:to-yellow-700 transition-all shadow-md"
-              >
-                Build and Buy
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation 
+        logo="Roster Frame"
+        links={[
+          { href: '/build-and-buy', label: 'Build & Buy' },
+          { href: '/marketplace', label: 'Marketplace' },
+          { href: '/collection', label: 'Collection' },
+        ]}
+      />
 
-      {/* Hero Section with Background */}
-      <div className="relative min-h-screen flex items-center">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/RosterFrameBackground.png"
-            alt="Roster Frame Background"
-            fill
-            className="object-cover"
-            priority
-            quality={85}
-          />
-          {/* Overlay for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-amber-900/40 to-yellow-900/50"></div>
-        </div>
-        
-        {/* Content */}
-        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h2 className="text-4xl font-bold text-white sm:text-5xl md:text-6xl drop-shadow-lg">
-              Showcase Your Fantasy Team
-            </h2>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-100 drop-shadow-md">
-              Create a custom frame featuring the football and baseball cards of your fantasy team players. 
-              Order your personalized plaque and cards all in one place.
-            </p>
-            <div className="mt-10">
-              <Link
-                href="/build-and-buy"
-                className="inline-block bg-gradient-to-r from-amber-600 to-yellow-500 text-white px-8 py-3 rounded-md text-lg font-medium hover:from-amber-700 hover:to-yellow-600 transition-all shadow-lg transform hover:scale-105"
-              >
-                Start Building Your Frame
-              </Link>
-            </div>
+      {/* Hero Section */}
+      <Hero
+        variant="centered"
+        title="Showcase Your Fantasy Legacy"
+        description="Create stunning custom plaques featuring your championship fantasy team. Premium materials, professional design, legendary results."
+        primaryAction={{ 
+          text: "Start Building Your Frame", 
+          href: "/build-and-buy" 
+        }}
+        secondaryAction={{ 
+          text: "View Gallery", 
+          href: "/marketplace" 
+        }}
+      >
+        <ScrollFade delay={600} className="mt-12">
+          <div className="relative mx-auto max-w-md">
+            <Image
+              src="/images/RosterFrameBackground.png"
+              alt="Custom Fantasy Roster Frame"
+              width={400}
+              height={300}
+              className="rounded-xl shadow-2xl"
+              priority
+            />
+            <div className="absolute -inset-4 bg-gradient-primary opacity-20 blur-2xl -z-10" />
           </div>
-        </main>
-      </div>
+        </ScrollFade>
+      </Hero>
 
       {/* Features Section */}
-      <section className="bg-gradient-to-b from-amber-50 to-yellow-50 py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-amber-900 mb-4">Why Choose Roster Frame?</h3>
-            <p className="text-lg text-amber-700">Premium quality, personalized experience</p>
-          </div>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg p-6 mb-4 border border-amber-200">
-                <svg className="mx-auto h-12 w-12 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-amber-900">Premium Frames</h3>
-              <p className="mt-2 text-amber-700">High-quality frames designed to showcase your collection</p>
+      <section className="py-24 bg-gradient-to-b from-[var(--surface-0)] to-[var(--surface-1)]">
+        <div className="container">
+          <ScrollFade>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold mb-4">
+                <span className="gradient-text">Why Choose Roster Frame?</span>
+              </h2>
+              <p className="text-xl text-[var(--text-secondary)] max-w-2xl mx-auto">
+                Premium quality meets personalized experience for serious fantasy players
+              </p>
             </div>
-            
-            <div className="text-center">
-              <div className="bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg p-6 mb-4 border border-amber-200">
-                <svg className="mx-auto h-12 w-12 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-amber-900">Fantasy Champions</h3>
-              <p className="mt-2 text-amber-700">Perfect for football and baseball fantasy league winners</p>
+          </ScrollFade>
+
+          <StaggeredContainer staggerDelay={150}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {features.map((feature, index) => (
+                <div key={index} className="text-center group">
+                  <div className="card-hover bg-[var(--surface-0)] rounded-xl p-8 border border-[var(--surface-2)] h-full">
+                    <div className="text-[var(--color-primary)] mb-6 flex justify-center">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-xl font-semibold mb-4 text-[var(--text-primary)]">
+                      {feature.title}
+                    </h3>
+                    <p className="text-[var(--text-secondary)] leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-            
+          </StaggeredContainer>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-gradient-to-b from-[var(--surface-1)] via-[var(--surface-2)] to-[var(--surface-1)]">
+        <div className="container">
+          <ScrollFade>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg p-6 mb-4 border border-amber-200">
-                <svg className="mx-auto h-12 w-12 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+              <h2 className="text-4xl font-bold mb-6">
+                <span className="gradient-text">Ready to Create Your Legacy?</span>
+              </h2>
+              <p className="text-xl mb-8 text-[var(--text-secondary)] max-w-2xl mx-auto">
+                Join thousands of fantasy champions who have immortalized their winning teams
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center">
+                <Button 
+                  variant="primary" 
+                  size="lg" 
+                  href="/build-and-buy"
+                >
+                  Build Your Frame
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="lg" 
+                  href="/collection"
+                >
+                  View Examples
+                </Button>
               </div>
-              <h3 className="text-lg font-semibold text-amber-900">Complete Solution</h3>
-              <p className="mt-2 text-amber-700">Order your frame and player cards together in one checkout</p>
             </div>
-          </div>
+          </ScrollFade>
         </div>
       </section>
     </div>

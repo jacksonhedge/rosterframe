@@ -1,23 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import Image from "next/image";
+import { useState, useEffect } from "react";
 import StripePaymentForm from "../components/StripePaymentForm";
+import PlaquePreview from "../components/PlaquePreview";
+import LivePlaquePreview from "../components/LivePlaquePreview";
+import PreviewGenerator from "../components/PreviewGenerator";
+import PlayerSearch from "../components/PlayerSearch";
+import { Navigation } from "../components/ui/Navigation";
 
 // Type definitions
 interface CardOption {
   id: string;
   playerName: string;
-  year: string;
+  name: string;
+  year: number;
+  brand: string;
+  series: string;
   condition: string;
   price: number;
-  rarity: string;
+  rarity: 'common' | 'rare' | 'legendary';
+  imageUrl: string;
+  seller?: string;
+  shipping?: number;
+  listingUrl?: string;
 }
 
 export default function BuildAndBuy() {
   const [currentStep, setCurrentStep] = useState<'setup' | 'building' | 'cards' | 'purchase' | 'done'>('setup');
   const [teamName, setTeamName] = useState<string>("");
+  const [selectedSport, setSelectedSport] = useState<'NFL' | 'MLB' | 'NBA' | 'NHL'>('NFL');
   const [isGift, setIsGift] = useState<boolean>(false);
+  const [playerSearchValue, setPlayerSearchValue] = useState<string>("");
   const [selectedPlaque, setSelectedPlaque] = useState<{
     id: string;
     name: string;
@@ -27,27 +42,73 @@ export default function BuildAndBuy() {
     pricePerSlot: number;
   } | null>(null);
 
-  // Roster positions state
+  // Get default positions based on sport
+  const getDefaultPositions = (sport: 'NFL' | 'MLB' | 'NBA' | 'NHL') => {
+    switch (sport) {
+      case 'NFL':
+        return [
+          { id: '1', position: 'Quarterback', playerName: '' },
+          { id: '2', position: 'Running Back', playerName: '' },
+          { id: '3', position: 'Running Back', playerName: '' },
+          { id: '4', position: 'Wide Receiver', playerName: '' },
+          { id: '5', position: 'Wide Receiver', playerName: '' },
+          { id: '6', position: 'Flex', playerName: '' },
+          { id: '7', position: 'Tight End', playerName: '' },
+          { id: '8', position: 'Defense/ST', playerName: '' },
+          { id: '9', position: 'Kicker', playerName: '' }
+        ];
+      case 'MLB':
+        return [
+          { id: '1', position: 'Pitcher', playerName: '' },
+          { id: '2', position: 'Catcher', playerName: '' },
+          { id: '3', position: 'First Base', playerName: '' },
+          { id: '4', position: 'Second Base', playerName: '' },
+          { id: '5', position: 'Third Base', playerName: '' },
+          { id: '6', position: 'Shortstop', playerName: '' },
+          { id: '7', position: 'Outfield', playerName: '' },
+          { id: '8', position: 'Outfield', playerName: '' }
+        ];
+      case 'NBA':
+        return [
+          { id: '1', position: 'Point Guard', playerName: '' },
+          { id: '2', position: 'Shooting Guard', playerName: '' },
+          { id: '3', position: 'Small Forward', playerName: '' },
+          { id: '4', position: 'Power Forward', playerName: '' },
+          { id: '5', position: 'Center', playerName: '' },
+          { id: '6', position: 'Bench', playerName: '' },
+          { id: '7', position: 'Bench', playerName: '' },
+          { id: '8', position: 'Bench', playerName: '' }
+        ];
+      case 'NHL':
+        return [
+          { id: '1', position: 'Center', playerName: '' },
+          { id: '2', position: 'Left Wing', playerName: '' },
+          { id: '3', position: 'Right Wing', playerName: '' },
+          { id: '4', position: 'Defense', playerName: '' },
+          { id: '5', position: 'Defense', playerName: '' },
+          { id: '6', position: 'Goalie', playerName: '' },
+          { id: '7', position: 'Bench', playerName: '' },
+          { id: '8', position: 'Bench', playerName: '' }
+        ];
+      default:
+        return [
+          { id: '1', position: 'Position 1', playerName: '' },
+          { id: '2', position: 'Position 2', playerName: '' },
+          { id: '3', position: 'Position 3', playerName: '' },
+          { id: '4', position: 'Position 4', playerName: '' }
+        ];
+    }
+  };
+
+  // Roster positions state - initialized with NFL defaults
   const [rosterPositions, setRosterPositions] = useState<Array<{
     id: string;
     position: string;
     playerName: string;
-  }>>([
-    { id: '1', position: 'Quarterback', playerName: '' },
-    { id: '2', position: 'Running Back', playerName: '' },
-    { id: '3', position: 'Wide Receiver', playerName: '' },
-    { id: '4', position: 'Flex', playerName: '' },
-  ]);
+  }>>(getDefaultPositions('NFL'));
 
   // Card selections state
-  const [selectedCards, setSelectedCards] = useState<Record<string, {
-    id: string;
-    playerName: string;
-    year: string;
-    condition: string;
-    price: number;
-    rarity: string;
-  }>>({});
+  const [selectedCards, setSelectedCards] = useState<Record<string, CardOption>>({});
 
   // Collapsed sections state for card selection
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -61,47 +122,108 @@ export default function BuildAndBuy() {
   const [isPreOrder, setIsPreOrder] = useState<boolean>(true); // Default to pre-order mode
   const [preOrderDiscount] = useState<number>(0.15); // 15% pre-order discount
 
-  // Available fantasy positions
-  const availablePositions = [
-    'Quarterback', 'Running Back', 'Wide Receiver', 'Flex', 'Tight End', 'Kicker', 'Defense/ST'
-  ];
+  // Shipping and subscription state
+  const [selectedShipping, setSelectedShipping] = useState<'standard' | 'express' | 'priority'>('standard');
+  const [subscribeToPortfolio, setSubscribeToPortfolio] = useState<boolean>(false);
+
+  // Shipping options
+  const shippingOptions = {
+    standard: { name: 'Standard Shipping', days: '7-10 days', price: 0 },
+    express: { name: 'Express Shipping', days: '3-5 days', price: 9.99 },
+    priority: { name: 'Priority Shipping', days: '1-2 days', price: 19.99 }
+  };
+
+  // Get available positions based on sport
+  const getAvailablePositions = (sport: 'NFL' | 'MLB' | 'NBA' | 'NHL') => {
+    switch (sport) {
+      case 'NFL':
+        return ['Quarterback', 'Running Back', 'Wide Receiver', 'Flex', 'Tight End', 'Kicker', 'Defense/ST'];
+      case 'MLB':
+        return ['Pitcher', 'Catcher', 'First Base', 'Second Base', 'Third Base', 'Shortstop', 'Outfield', 'Designated Hitter', 'Utility'];
+      case 'NBA':
+        return ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center', 'Guard', 'Forward', 'Bench'];
+      case 'NHL':
+        return ['Center', 'Left Wing', 'Right Wing', 'Defense', 'Goalie', 'Forward', 'Bench'];
+      default:
+        return ['Position 1', 'Position 2', 'Position 3', 'Position 4'];
+    }
+  };
+
+  const availablePositions = getAvailablePositions(selectedSport);
+
+  // Update roster positions when sport changes
+  useEffect(() => {
+    // Clear all selected cards when sport changes
+    setSelectedCards({});
+    // Set new default positions for the selected sport
+    setRosterPositions(getDefaultPositions(selectedSport));
+  }, [selectedSport]);
 
   // Generate card options for a player
   const generateCardOptions = (playerName: string): CardOption[] => {
     if (!playerName.trim()) return [];
     
     return [
+      // Default recommended card
       {
-        id: `${playerName}-rookie`,
+        id: `${playerName}-default`,
         playerName,
-        year: '2021',
-        condition: 'Mint',
-        price: 12.99,
-        rarity: 'Rookie Card'
-      },
-      {
-        id: `${playerName}-premium`,
-        playerName,
-        year: '2022',
+        name: playerName,
+        year: 2023,
+        brand: 'Panini Prizm',
+        series: 'Base',
         condition: 'Near Mint',
-        price: 24.99,
-        rarity: 'Premium'
+        price: 15.99,
+        rarity: 'common',
+        imageUrl: '',
+        seller: 'RosterFrame',
+        shipping: 0 // Free shipping included
+      },
+      // I have my own card option
+      {
+        id: `${playerName}-own-card`,
+        playerName,
+        name: playerName,
+        year: 2024,
+        brand: 'Your Collection',
+        series: 'I have my own',
+        condition: 'Already Owned',
+        price: 0,
+        rarity: 'common',
+        imageUrl: '',
+        seller: 'You',
+        shipping: 0,
+        listingUrl: '#own-card'
+      },
+      // Search eBay option
+      {
+        id: `${playerName}-search-ebay`,
+        playerName,
+        name: playerName,
+        year: 2024,
+        brand: 'Search',
+        series: 'Browse eBay',
+        condition: 'Various',
+        price: 0,
+        rarity: 'common',
+        imageUrl: '',
+        seller: 'eBay',
+        shipping: 0,
+        listingUrl: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(playerName + ' trading card')}`
       },
       {
-        id: `${playerName}-auto`,
+        id: `${playerName}-base`,
         playerName,
-        year: '2023',
-        condition: 'Mint',
-        price: 45.99,
-        rarity: 'Autographed'
-      },
-      {
-        id: `${playerName}-rare`,
-        playerName,
-        year: '2020',
+        name: playerName,
+        year: 2020,
+        brand: 'Score',
+        series: 'Base Set',
         condition: 'Excellent',
         price: 8.99,
-        rarity: 'Base Set'
+        rarity: 'common',
+        imageUrl: '',
+        seller: 'CardsForAll',
+        shipping: 1.99
       }
     ];
   };
@@ -126,15 +248,20 @@ export default function BuildAndBuy() {
   };
 
   const updatePosition = (id: string, field: 'position' | 'playerName', value: string) => {
+    const currentPosition = rosterPositions.find(pos => pos.id === id);
+    
     setRosterPositions(rosterPositions.map(pos => 
       pos.id === id ? { ...pos, [field]: value } : pos
     ));
     
-    // If player name changed, clear selected card for this position
-    if (field === 'playerName') {
-      const newSelectedCards = { ...selectedCards };
-      delete newSelectedCards[id];
-      setSelectedCards(newSelectedCards);
+    // If player name changed to empty or different player, clear selected card
+    if (field === 'playerName' && currentPosition && currentPosition.playerName !== value) {
+      if (!value) {
+        // Only clear if the name is being emptied
+        const newSelectedCards = { ...selectedCards };
+        delete newSelectedCards[id];
+        setSelectedCards(newSelectedCards);
+      }
     }
   };
 
@@ -160,68 +287,80 @@ export default function BuildAndBuy() {
 
   const calculateTotalPrice = () => {
     const plaquePrice = selectedPlaque?.price || 78.00;
-    const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price, 0);
-    const subtotal = plaquePrice + cardsPrice;
+    const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
+    let subtotal = plaquePrice + cardsPrice;
     
+    // Apply pre-order discount if applicable
     if (isPreOrder) {
-      return subtotal * (1 - preOrderDiscount);
+      subtotal = subtotal * (1 - preOrderDiscount);
     }
-    return subtotal;
+    
+    // Add shipping cost
+    const shippingCost = shippingOptions[selectedShipping].price;
+    
+    // Add portfolio subscription if selected ($4.99/month)
+    const subscriptionCost = subscribeToPortfolio ? 4.99 : 0;
+    
+    return subtotal + shippingCost + subscriptionCost;
   };
 
   const calculateSavings = () => {
     if (!isPreOrder) return 0;
     const plaquePrice = selectedPlaque?.price || 78.00;
-    const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price, 0);
+    const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
     const subtotal = plaquePrice + cardsPrice;
     return subtotal * preOrderDiscount;
   };
 
-  // Plaque options
+  // Determine plaque type based on number of positions
+  const getPlaqueType = () => {
+    return rosterPositions.length <= 8 ? '8' : '10';
+  };
+
+  // Plaque options - dynamically adjust based on roster size
   const plaqueOptions = [
     {
-      id: 'wood-brown',
-      name: 'Wood Brown',
-      material: 'Premium Walnut',
-      description: 'Rich walnut finish with bronze nameplate and felt backing',
-      price: 78.00,
-      pricePerSlot: 6.50,
+      id: 'dark-maple-wood',
+      name: 'Dark Maple Wood Plaque',
+      material: 'Premium dark maple wood finish',
+      description: `Premium dark maple wood finish with ${getPlaqueType()} card slots`,
+      price: getPlaqueType() === '8' ? 129.99 : 149.99,
+      pricePerSlot: getPlaqueType() === '8' ? 16.25 : 15.00,
       gradient: 'from-amber-50 to-amber-100',
       border: 'border-amber-200',
-      accent: 'text-amber-800'
+      accent: 'text-amber-800',
+      image: '/images/DarkMapleWood1.png',
+      plaqueType: getPlaqueType() as '8' | '10',
+      style: 'dark-maple-wood'
     },
     {
       id: 'clear',
-      name: 'Clear Plexiglass',
-      material: 'High-Grade Acrylic',
-      description: 'Crystal clear acrylic with modern floating card design',
-      price: 92.00,
-      pricePerSlot: 7.67,
-      gradient: 'from-yellow-50 to-amber-50',
-      border: 'border-yellow-200',
-      accent: 'text-yellow-800'
+      name: 'Clear Plaque',
+      material: 'Crystal clear acrylic',
+      description: `Crystal clear acrylic with ${getPlaqueType()} card slots - shows front or back`,
+      price: getPlaqueType() === '8' ? 149.99 : 169.99,
+      pricePerSlot: getPlaqueType() === '8' ? 18.75 : 17.00,
+      gradient: 'from-blue-50 to-indigo-50',
+      border: 'border-blue-200',
+      accent: 'text-blue-800',
+      image: '/images/ClearPlaque8.png',
+      plaqueType: getPlaqueType() as '8' | '10',
+      style: 'clear-plaque',
+      hasBackOption: true
     },
     {
-      id: 'glass',
-      name: 'Premium Glass',
-      material: 'Tempered Glass',
-      description: 'Elegant tempered glass with etched team name and LED backing',
-      price: 125.00,
-      pricePerSlot: 10.42,
-      gradient: 'from-orange-50 to-yellow-100',
-      border: 'border-orange-200',
-      accent: 'text-orange-800'
-    },
-    {
-      id: 'black',
-      name: 'Matte Black',
-      material: 'Anodized Aluminum',
-      description: 'Sleek matte black aluminum with gold accents and LED strips',
-      price: 115.00,
-      pricePerSlot: 9.58,
+      id: 'black-marble',
+      name: 'Black Marble Plaque',
+      material: 'Elegant black marble finish',
+      description: `Elegant black marble finish with ${getPlaqueType()} card slots`,
+      price: getPlaqueType() === '8' ? 159.99 : 179.99,
+      pricePerSlot: getPlaqueType() === '8' ? 20.00 : 18.00,
       gradient: 'from-gray-800 to-black',
-      border: 'border-yellow-400',
-      accent: 'text-yellow-400'
+      border: 'border-gray-400',
+      accent: 'text-gray-100',
+      image: '/images/BlackMarble8.png',
+      plaqueType: getPlaqueType() as '8' | '10',
+      style: 'black-marble'
     }
   ];
 
@@ -240,7 +379,6 @@ export default function BuildAndBuy() {
 
   const handlePlaqueSelection = (plaque: typeof plaqueOptions[0]) => {
     setSelectedPlaque(plaque);
-    setCurrentStep('building');
   };
 
   const canProceedToCards = () => {
@@ -263,35 +401,39 @@ export default function BuildAndBuy() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50">
-      {/* Enhanced Navigation */}
-      <nav className="bg-white/90 backdrop-blur-md shadow-lg border-b border-amber-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 transition-all">
-                Roster Frame
-              </Link>
-            </div>
-            <div className="flex items-center space-x-6">
-              {currentStep !== 'setup' && (
-                <div className="flex items-center space-x-2 bg-amber-50 px-4 py-2 rounded-full border border-amber-200">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-amber-700">
-                    {currentStep === 'cards' ? 'Select Cards' : 
-                     `Building ${teamName || 'Your Team'}`}
-                    {isGift && <span className="ml-2">🎁</span>}
-                  </span>
-                </div>
-              )}
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50">
+      {/* Navigation */}
+      <Navigation 
+        logo="Roster Frame"
+        links={[
+          { href: '/build-and-buy', label: 'Build & Buy' },
+          { href: '/marketplace', label: 'Marketplace' },
+          { href: '/collection', label: 'Collection' },
+        ]}
+      />
+
+      {/* Spacer for fixed navigation */}
+      <div className="h-16 md:h-20"></div>
+
+      {/* Status Bar */}
+      {currentStep !== 'setup' && (
+        <div className="fixed top-20 left-0 right-0 z-10 bg-amber-50/95 backdrop-blur-md border-b border-amber-200 py-3">
+          <div className="max-w-7xl mx-auto px-4 flex justify-center">
+            <div className="flex items-center space-x-2 bg-amber-100 px-4 py-2 rounded-full border border-amber-200">
+              <div className="w-2 h-2 bg-amber-600 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-amber-800">
+                {currentStep === 'cards' ? 'Select Cards' : 
+                 `Building ${teamName || 'Your Team'}`}
+                {isGift && <span className="ml-2">🎁</span>}
+              </span>
             </div>
           </div>
         </div>
-      </nav>
+      )}
 
-      {/* Progress Bar */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-amber-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Progress Bar - STICKY (Always Visible) */}
+      <div className="relative z-30 bg-white/90 backdrop-blur-md border-b border-amber-200 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             {progressSteps.map((step, index) => {
               const isActive = index === getCurrentStepIndex();
@@ -331,13 +473,25 @@ export default function BuildAndBuy() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Extra padding to account for sticky progress bar */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Live Plaque Preview - Shows after cards are selected in card selection and purchase steps */}
+        {Object.keys(selectedCards).length > 0 && (currentStep === 'cards' || currentStep === 'purchase') && (
+          <div className="mb-8 animate-in slide-in-from-top duration-500">
+            <LivePlaquePreview
+              teamName={teamName}
+              plaqueStyle={selectedPlaque?.style || 'dark-maple-wood'}
+              selectedCards={selectedCards}
+              rosterPositions={rosterPositions}
+              plaqueType={getPlaqueType()}
+            />
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-8">
           
           {/* Step 1: Setup & Plaque Selection */}
           {currentStep === 'setup' && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mt-8">
               <div className="text-center mb-8">
                 <h1 className="text-4xl font-black text-amber-900 mb-4">
                   Build Your 
@@ -347,59 +501,6 @@ export default function BuildAndBuy() {
               </div>
               
               <div className="space-y-8">
-                {/* Pre-Order & Gift Options */}
-                <div className="space-y-4">
-                  {/* Pre-Order Toggle */}
-                  <div className="flex items-center justify-center">
-                    <div className="flex items-center space-x-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border-2 border-blue-200">
-                      <span className="text-2xl">🚀</span>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-lg font-semibold text-blue-800">Pre-Order (Save 15%)</span>
-                        <button
-                          onClick={() => setIsPreOrder(!isPreOrder)}
-                          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                            isPreOrder ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                              isPreOrder ? 'translate-x-7' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <span className="text-sm text-blue-600 italic">
-                          {isPreOrder ? 'Ships March 2025' : 'Ships in 7-10 days'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Gift Toggle */}
-                  <div className="flex items-center justify-center">
-                    <div className="flex items-center space-x-4 bg-gradient-to-r from-yellow-50 to-amber-50 p-6 rounded-2xl border-2 border-yellow-200">
-                      <span className="text-2xl">🎁</span>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-lg font-semibold text-amber-800">Is this a gift?</span>
-                        <button
-                          onClick={() => setIsGift(!isGift)}
-                          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                            isGift ? 'bg-gradient-to-r from-amber-500 to-yellow-500' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                              isGift ? 'translate-x-7' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                        <span className="text-sm text-amber-600 italic">
-                          {isGift ? "Perfect for gifting!" : "Optional"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
                 {/* Team Name */}
                 <div>
                   <label htmlFor="team-name" className="block text-xl font-bold text-amber-800 mb-4">
@@ -415,14 +516,52 @@ export default function BuildAndBuy() {
                   />
                 </div>
 
+                {/* Sport Selection */}
+                <div>
+                  <label className="block text-xl font-bold text-amber-800 mb-4">
+                    🏈 Pick a Sport
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { id: 'NFL', name: 'NFL', icon: '🏈', color: 'from-green-500 to-green-600' },
+                      { id: 'MLB', name: 'MLB', icon: '⚾', color: 'from-red-500 to-red-600' },
+                      { id: 'NBA', name: 'NBA', icon: '🏀', color: 'from-orange-500 to-orange-600' },
+                      { id: 'NHL', name: 'NHL', icon: '🏒', color: 'from-blue-500 to-blue-600' }
+                    ].map((sport) => (
+                      <button
+                        key={sport.id}
+                        onClick={() => setSelectedSport(sport.id as 'NFL' | 'MLB' | 'NBA' | 'NHL')}
+                        className={`relative p-6 rounded-xl border-2 transition-all transform hover:scale-105 ${
+                          selectedSport === sport.id
+                            ? `bg-gradient-to-br ${sport.color} text-white border-transparent shadow-lg`
+                            : 'bg-white/70 border-amber-200 hover:border-amber-400'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="text-4xl mb-2">{sport.icon}</div>
+                          <div className={`font-bold text-lg ${
+                            selectedSport === sport.id ? 'text-white' : 'text-amber-800'
+                          }`}>
+                            {sport.name}
+                          </div>
+                        </div>
+                        {selectedSport === sport.id && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                              <span className="text-sm">✓</span>
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Plaque Selection */}
                 <div>
                   <div className="text-center mb-6">
                     <h3 className="text-2xl font-black text-amber-900 mb-3">Choose Your Plaque Style</h3>
                     <p className="text-lg text-amber-700">Select the perfect finish for your fantasy team display</p>
-                    {isGift && (
-                      <p className="text-yellow-600 font-semibold mt-2">🎁 Gift packaging included</p>
-                    )}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -430,35 +569,55 @@ export default function BuildAndBuy() {
                       <div
                         key={plaque.id}
                         onClick={() => handlePlaqueSelection(plaque)}
-                        className={`bg-gradient-to-br ${plaque.gradient} ${plaque.border} rounded-2xl p-6 cursor-pointer border-2 hover:scale-[1.02] transition-all transform shadow-lg hover:shadow-xl ${
-                          plaque.id === 'black' ? 'text-white' : ''
+                        className={`relative overflow-hidden bg-gradient-to-br ${plaque.gradient} ${plaque.border} rounded-2xl cursor-pointer border-2 hover:scale-[1.02] transition-all transform shadow-lg hover:shadow-xl ${
+                          plaque.id === 'black-marble' ? 'text-white' : ''
                         } ${selectedPlaque?.id === plaque.id ? 'ring-4 ring-amber-500' : ''}`}
                       >
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex-1">
-                            <h3 className={`text-2xl font-black mb-2 ${plaque.id === 'black' ? 'text-white' : plaque.accent}`}>
+                        {/* Plaque Preview Image */}
+                        <div className="relative h-48 bg-gradient-to-b from-gray-100 to-gray-200 overflow-hidden">
+                          {plaque.image && (
+                            <img
+                              src={plaque.image}
+                              alt={plaque.name}
+                              className="w-full h-full object-contain"
+                            />
+                          )}
+                          {plaque.hasBackOption && (
+                            <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                              Front/Back Option
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Plaque Details */}
+                        <div className="p-6">
+                          <div className="mb-4">
+                            <h3 className={`text-xl font-black mb-1 ${plaque.id === 'black-marble' ? 'text-white' : plaque.accent}`}>
                               {plaque.name}
                             </h3>
-                            <p className={`text-lg font-semibold mb-3 ${plaque.id === 'black' ? 'text-gray-300' : 'opacity-80'}`}>
+                            <p className={`text-sm font-semibold mb-2 ${plaque.id === 'black-marble' ? 'text-gray-300' : 'opacity-80'}`}>
                               {plaque.material}
                             </p>
-                            <p className={`text-sm leading-relaxed ${plaque.id === 'black' ? 'text-gray-400' : 'opacity-70'}`}>
+                            <p className={`text-xs leading-relaxed ${plaque.id === 'black-marble' ? 'text-gray-400' : 'opacity-70'}`}>
                               {plaque.description}
                             </p>
                           </div>
-                          <div className="text-right ml-6">
-                            <p className={`text-3xl font-black mb-1 ${plaque.id === 'black' ? 'text-yellow-400' : plaque.accent}`}>
-                              ${plaque.price.toFixed(2)}
-                            </p>
-                            <p className={`text-sm ${plaque.id === 'black' ? 'text-gray-400' : 'opacity-70'}`}>
-                              ${plaque.pricePerSlot.toFixed(2)} per slot
-                            </p>
+                          
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className={`text-2xl font-black ${plaque.id === 'black-marble' ? 'text-green-400' : plaque.accent}`}>
+                                ${plaque.price.toFixed(2)}
+                              </p>
+                              <p className={`text-xs ${plaque.id === 'black-marble' ? 'text-gray-400' : 'opacity-70'}`}>
+                                ${plaque.pricePerSlot.toFixed(2)} per slot
+                              </p>
+                            </div>
+                            <div className={`${plaque.id === 'black-marble' ? 'bg-yellow-400/20' : 'bg-white/20'} px-3 py-1.5 rounded-lg`}>
+                              <span className={`text-xs font-semibold ${plaque.id === 'black-marble' ? 'text-yellow-400' : plaque.accent}`}>
+                                {selectedPlaque?.id === plaque.id ? '✓ Selected' : 'Select'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <div className={`${plaque.id === 'black' ? 'bg-yellow-400/20' : 'bg-white/20'} px-4 py-2 rounded-lg text-center`}>
-                          <span className={`text-sm font-semibold ${plaque.id === 'black' ? 'text-yellow-400' : plaque.accent}`}>
-                            {selectedPlaque?.id === plaque.id ? '✓ Selected' : 'Select This Style'}
-                          </span>
                         </div>
                       </div>
                     ))}
@@ -491,16 +650,36 @@ export default function BuildAndBuy() {
               <div className="text-center mb-8">
                 <h2 className="text-3xl font-black text-amber-900 mb-3">Build Your Roster</h2>
                 <p className="text-lg text-amber-700">Add your players and select their cards</p>
-                {selectedPlaque && (
-                  <div className="mt-4 inline-block bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
-                    <span className="text-sm font-semibold text-amber-700">
-                      Selected: {selectedPlaque.name} - ${selectedPlaque.price.toFixed(2)}
-                    </span>
-                  </div>
-                )}
               </div>
               
+              {/* Live Plaque Preview */}
+              {selectedPlaque && (
+                <div className="mb-8">
+                  <LivePlaquePreview
+                    teamName={teamName}
+                    plaqueStyle={selectedPlaque?.style || 'dark-maple-wood'}
+                    selectedCards={selectedCards}
+                    rosterPositions={rosterPositions}
+                    plaqueType={getPlaqueType()}
+                  />
+                </div>
+              )}
+              
               <div className="space-y-6">
+                {/* Player Database Info */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+                  <div className="text-center">
+                    <h3 className="text-xl font-bold text-blue-800 mb-2">
+                      {selectedSport === 'NFL' && '🏈'}
+                      {selectedSport === 'MLB' && '⚾'}
+                      {selectedSport === 'NBA' && '🏀'}
+                      {selectedSport === 'NHL' && '🏒'}
+                      {' '}Search {selectedSport} Player Database
+                    </h3>
+                    <p className="text-sm text-blue-600">Find real {selectedSport} players with trading cards available</p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {rosterPositions.map((position, index) => (
                     <div key={position.id} className="border-2 rounded-xl p-6 border-amber-300 bg-white/50 relative">
@@ -529,27 +708,47 @@ export default function BuildAndBuy() {
                           ))}
                         </select>
                       </div>
-                      <input
-                        type="text"
+                      <PlayerSearch
                         value={position.playerName}
-                        onChange={(e) => updatePosition(position.id, 'playerName', e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-amber-800 font-medium"
-                        placeholder="Type NFL player name..."
+                        onChange={(playerName, card) => {
+                          updatePosition(position.id, 'playerName', playerName);
+                          // Auto-select a default card when player is selected
+                          if (playerName && !selectedCards[position.id]) {
+                            const defaultCard: CardOption = {
+                              id: `${position.id}-default`,
+                              playerName: playerName,
+                              name: playerName,
+                              year: 2023,
+                              brand: 'Panini',
+                              series: 'Base',
+                              condition: 'Near Mint',
+                              price: 15.99,
+                              rarity: 'common',
+                              imageUrl: '',
+                              shipping: 3.99
+                            };
+                            selectCard(position.id, defaultCard);
+                          }
+                        }}
+                        placeholder={`Type ${selectedSport} player name...`}
+                        className="text-amber-800 font-medium"
                       />
                     </div>
                   ))}
                 </div>
                 
-                {/* Add Position Button */}
-                <div className="flex justify-center">
-                  <button
-                    onClick={addPosition}
-                    className="bg-amber-100 text-amber-700 px-6 py-3 rounded-xl font-semibold hover:bg-amber-200 transition-all border-2 border-amber-300 flex items-center space-x-2"
-                  >
-                    <span className="text-xl">+</span>
-                    <span>Add Position</span>
-                  </button>
-                </div>
+                {/* Add Position Button - Only show if less than 10 positions */}
+                {rosterPositions.length < 10 && (
+                  <div className="flex justify-center">
+                    <button
+                      onClick={addPosition}
+                      className="bg-amber-100 text-amber-700 px-6 py-3 rounded-xl font-semibold hover:bg-amber-200 transition-all border-2 border-amber-300 flex items-center space-x-2"
+                    >
+                      <span className="text-xl">+</span>
+                      <span>Add Position</span>
+                    </button>
+                  </div>
+                )}
                 
                 {/* Import Options */}
                 <div className="border-t border-amber-200 pt-6">
@@ -588,23 +787,25 @@ export default function BuildAndBuy() {
 
           {/* Step 4: Card Selection */}
           {currentStep === 'cards' && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-black text-amber-900 mb-3">Select Player Cards</h2>
-                <p className="text-lg text-amber-700">Choose the perfect cards for each player in your roster</p>
-                <div className="mt-4 flex justify-center space-x-4">
-                  <div className="bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
-                    <span className="text-sm font-semibold text-amber-700">
-                      Plaque: ${selectedPlaque?.price.toFixed(2) || '78.00'}
-                    </span>
-                  </div>
-                  <div className="bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-200">
-                    <span className="text-sm font-semibold text-yellow-700">
-                      Cards: ${Object.values(selectedCards).reduce((total, card) => total + card.price, 0).toFixed(2)}
-                    </span>
+            <>
+              {/* Card Selection */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-black text-amber-900 mb-3">Select Player Cards</h2>
+                  <p className="text-lg text-amber-700">Choose the perfect cards for each player in your roster</p>
+                  <div className="mt-4 flex justify-center space-x-4">
+                    <div className="bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
+                      <span className="text-sm font-semibold text-amber-700">
+                        Plaque: ${selectedPlaque?.price.toFixed(2) || '78.00'}
+                      </span>
+                    </div>
+                    <div className="bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-200">
+                      <span className="text-sm font-semibold text-yellow-700">
+                        Cards: ${Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="space-y-6">
                 {rosterPositions.filter(pos => pos.playerName.trim()).map((position) => {
@@ -639,10 +840,10 @@ export default function BuildAndBuy() {
                           {selectedCard ? (
                             <div className="text-right">
                               <div className="text-sm text-green-600 font-semibold">
-                                ✓ {selectedCard.year} {selectedCard.rarity}
+                                ✓ {selectedCard.year} {selectedCard.series}
                               </div>
                               <div className="text-lg font-bold text-green-700">
-                                ${selectedCard.price.toFixed(2)}
+                                ${(selectedCard.price + (selectedCard.shipping || 0)).toFixed(2)}
                               </div>
                             </div>
                           ) : (
@@ -684,11 +885,35 @@ export default function BuildAndBuy() {
                                     }`}
                                   >
                                     {/* Card Visual */}
-                                    <div className="bg-gradient-to-br from-amber-100 to-yellow-100 rounded-lg aspect-[3/4] mb-3 flex items-center justify-center border border-amber-200">
-                                      <div className="text-center">
-                                        <div className="text-xs font-bold text-amber-800 mb-1">{card.year}</div>
-                                        <div className="text-sm font-bold text-amber-900 leading-tight">{card.playerName}</div>
-                                        <div className="text-xs text-amber-600 mt-1">{card.rarity}</div>
+                                    <div className={`rounded-lg aspect-[3/4] mb-3 flex items-center justify-center border ${
+                                      card.series === 'I have my own' 
+                                        ? 'bg-gradient-to-br from-green-100 to-emerald-100 border-green-300'
+                                        : card.series === 'Browse eBay'
+                                        ? 'bg-gradient-to-br from-blue-100 to-indigo-100 border-blue-300'
+                                        : 'bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-200'
+                                    }`}>
+                                      <div className="text-center p-2">
+                                        {card.series === 'I have my own' ? (
+                                          <>
+                                            <div className="text-3xl mb-2">🃏</div>
+                                            <div className="text-sm font-bold text-green-800">I Have</div>
+                                            <div className="text-sm font-bold text-green-800">My Own</div>
+                                            <div className="text-xs text-green-600 mt-1">FREE</div>
+                                          </>
+                                        ) : card.series === 'Browse eBay' ? (
+                                          <>
+                                            <div className="text-3xl mb-2">🔍</div>
+                                            <div className="text-sm font-bold text-blue-800">Search</div>
+                                            <div className="text-sm font-bold text-blue-800">eBay</div>
+                                            <div className="text-xs text-blue-600 mt-1">Browse Options</div>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <div className="text-xs font-bold text-amber-800 mb-1">{card.year}</div>
+                                            <div className="text-sm font-bold text-amber-900 leading-tight">{card.playerName}</div>
+                                            <div className="text-xs text-amber-600 mt-1">{card.brand}</div>
+                                          </>
+                                        )}
                                       </div>
                                     </div>
                                     
@@ -708,12 +933,26 @@ export default function BuildAndBuy() {
                                         </span>
                                       </div>
                                       <div className="flex justify-between items-center">
-                                        <span className="text-xs font-semibold text-gray-600">Type:</span>
-                                        <span className="text-xs font-bold text-purple-600">{card.rarity}</span>
+                                        <span className="text-xs font-semibold text-gray-600">Series:</span>
+                                        <span className="text-xs font-bold text-purple-600">{card.series}</span>
                                       </div>
                                       <div className="pt-2 border-t border-gray-200">
                                         <div className="text-center">
-                                          <span className="text-lg font-black text-amber-700">${card.price.toFixed(2)}</span>
+                                          {card.series === 'I have my own' ? (
+                                            <div className="text-lg font-black text-green-700">FREE</div>
+                                          ) : card.series === 'Browse eBay' ? (
+                                            <div className="text-sm font-bold text-blue-700">Click to Search</div>
+                                          ) : (
+                                            <>
+                                              <div className="text-lg font-black text-amber-700">${card.price.toFixed(2)}</div>
+                                              {card.shipping > 0 && (
+                                                <div className="text-xs text-gray-500">+${card.shipping.toFixed(2)} shipping</div>
+                                              )}
+                                              {card.shipping === 0 && card.price > 0 && (
+                                                <div className="text-xs text-green-600 font-semibold">FREE Shipping</div>
+                                              )}
+                                            </>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
@@ -737,6 +976,22 @@ export default function BuildAndBuy() {
                 })}
               </div>
 
+                            </div>
+              
+              {/* Preview Generator */}
+              {canProceedToPurchase() && (
+                <div className="mt-8">
+                  <PreviewGenerator
+                    teamName={teamName}
+                    plaqueType={rosterPositions.length <= 8 ? '8' : '10'}
+                    plaqueStyle={selectedPlaque?.name || 'Classic Wood'}
+                    selectedCards={selectedCards}
+                    rosterPositions={rosterPositions}
+                  />
+                </div>
+              )}
+              
+              {/* Action Buttons */}
               <div className="flex space-x-4 mt-8">
                 <button
                   onClick={() => setCurrentStep('building')}
@@ -756,7 +1011,7 @@ export default function BuildAndBuy() {
                   🚀 Proceed to Checkout - ${calculateTotalPrice().toFixed(2)}
                 </button>
               </div>
-            </div>
+            </>
           )}
 
           {/* Step 5: Purchase */}
@@ -770,6 +1025,141 @@ export default function BuildAndBuy() {
                 )}
               </div>
 
+              <div className="space-y-6 mb-8">
+                {/* Pre-Order & Gift Options */}
+                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-6 border border-amber-200">
+                  <h3 className="text-xl font-bold text-amber-900 mb-4">Order Options</h3>
+                  <div className="space-y-4">
+                    {/* Pre-Order Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-white/50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">🚀</span>
+                        <div>
+                          <span className="text-lg font-semibold text-amber-800">Pre-Order (Save 15%)</span>
+                          <p className="text-sm text-amber-600">
+                            {isPreOrder ? 'Ships March 2025' : 'Ships in 7-10 days'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setIsPreOrder(!isPreOrder)}
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                          isPreOrder ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                            isPreOrder ? 'translate-x-7' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Gift Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-white/50 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">🎁</span>
+                        <div>
+                          <span className="text-lg font-semibold text-amber-800">Is this a gift?</span>
+                          <p className="text-sm text-amber-600">
+                            {isGift ? "We'll include gift wrapping!" : "Optional gift wrapping"}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setIsGift(!isGift)}
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                          isGift ? 'bg-gradient-to-r from-amber-500 to-yellow-500' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                          isGift ? 'translate-x-7' : 'translate-x-1'
+                        }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Shipping Options */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">📦 Shipping Options</h3>
+                  <div className="space-y-3">
+                    {Object.entries(shippingOptions).map(([key, option]) => (
+                      <div 
+                        key={key}
+                        onClick={() => setSelectedShipping(key as 'standard' | 'express' | 'priority')}
+                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          selectedShipping === key
+                            ? 'border-blue-500 bg-blue-100'
+                            : 'border-gray-200 bg-white hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-semibold text-gray-800">{option.name}</div>
+                            <div className="text-sm text-gray-600">{option.days}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-bold ${
+                              option.price === 0 ? 'text-green-600' : 'text-gray-800'
+                            }`}>
+                              {option.price === 0 ? 'FREE' : `$${option.price.toFixed(2)}`}
+                            </div>
+                            {selectedShipping === key && (
+                              <div className="text-xs text-blue-600 font-semibold">Selected</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Portfolio Value Tracking */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                  <h3 className="text-xl font-bold text-purple-900 mb-4">📈 Portfolio Value Tracking</h3>
+                  <div className="p-4 bg-white/70 rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-purple-800 mb-2">Card Portfolio Tracker</h4>
+                        <p className="text-sm text-purple-600 mb-3">
+                          Track your card values in real-time! Get monthly updates on how your card collection is performing.
+                        </p>
+                        <ul className="text-xs text-gray-600 space-y-1">
+                          <li className="flex items-center">
+                            <span className="text-green-500 mr-1">✓</span>
+                            Real-time market value updates
+                          </li>
+                          <li className="flex items-center">
+                            <span className="text-green-500 mr-1">✓</span>
+                            Monthly portfolio reports
+                          </li>
+                          <li className="flex items-center">
+                            <span className="text-green-500 mr-1">✓</span>
+                            Price alerts for significant changes
+                          </li>
+                        </ul>
+                      </div>
+                      <button
+                        onClick={() => setSubscribeToPortfolio(!subscribeToPortfolio)}
+                        className={`ml-4 p-2 rounded-lg transition-all ${
+                          subscribeToPortfolio
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="font-bold">${subscribeToPortfolio ? '✓' : '+'}</div>
+                          <div className="text-xs">$4.99/mo</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Order Summary */}
                 <div className="space-y-6">
@@ -779,6 +1169,10 @@ export default function BuildAndBuy() {
                       <div className="flex justify-between items-center">
                         <span className="font-semibold">Team Name:</span>
                         <span className="font-bold text-amber-600">{teamName}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">Sport:</span>
+                        <span className="font-bold text-amber-600">{selectedSport}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="font-semibold">Plaque Style:</span>
@@ -801,19 +1195,29 @@ export default function BuildAndBuy() {
                         <span className="font-bold">{isPreOrder ? '🚀 Pre-Order' : '📦 Regular Order'}</span>
                       </div>
                       <div className="border-t border-amber-300 pt-3 mt-3 space-y-2">
+                        <div className="flex justify-between items-center text-sm text-gray-600">
+                          <span>Plaque & Cards:</span>
+                          <span>${((selectedPlaque?.price || 0) + Object.values(selectedCards).reduce((sum, card) => sum + card.price + (card.shipping || 0), 0)).toFixed(2)}</span>
+                        </div>
                         {isPreOrder && (
-                          <>
-                            <div className="flex justify-between items-center text-sm text-gray-600">
-                              <span>Subtotal:</span>
-                              <span>${(calculateTotalPrice() / (1 - preOrderDiscount)).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm text-green-600">
-                              <span>Pre-Order Discount (15%):</span>
-                              <span>-${calculateSavings().toFixed(2)}</span>
-                            </div>
-                          </>
+                          <div className="flex justify-between items-center text-sm text-green-600">
+                            <span>Pre-Order Discount (15%):</span>
+                            <span>-${calculateSavings().toFixed(2)}</span>
+                          </div>
                         )}
-                        <div className="flex justify-between items-center text-lg">
+                        {shippingOptions[selectedShipping].price > 0 && (
+                          <div className="flex justify-between items-center text-sm text-gray-600">
+                            <span>Shipping ({shippingOptions[selectedShipping].name}):</span>
+                            <span>${shippingOptions[selectedShipping].price.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {subscribeToPortfolio && (
+                          <div className="flex justify-between items-center text-sm text-purple-600">
+                            <span>Portfolio Tracking (monthly):</span>
+                            <span>$4.99</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center text-lg pt-2 border-t">
                           <span className="font-bold">Total Amount:</span>
                           <span className="font-bold text-green-600">${calculateTotalPrice().toFixed(2)}</span>
                         </div>
@@ -836,8 +1240,8 @@ export default function BuildAndBuy() {
                         const position = rosterPositions.find(p => p.id === positionId);
                         return (
                           <div key={positionId} className="flex justify-between items-center text-sm">
-                            <span className="font-semibold">{position?.playerName} ({card.year} {card.rarity}):</span>
-                            <span className="font-bold text-amber-600">${card.price.toFixed(2)}</span>
+                            <span className="font-semibold">{position?.playerName} ({card.year} {card.series}):</span>
+                            <span className="font-bold text-amber-600">${(card.price + (card.shipping || 0)).toFixed(2)}</span>
                           </div>
                         );
                       })}
@@ -851,7 +1255,7 @@ export default function BuildAndBuy() {
                         <div className="flex justify-between items-center">
                           <span className="font-bold">Cards Total:</span>
                           <span className="font-bold text-amber-600">
-                            ${Object.values(selectedCards).reduce((total, card) => total + card.price, 0).toFixed(2)}
+                            ${Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -893,6 +1297,7 @@ export default function BuildAndBuy() {
                     onPaymentError={handlePaymentError}
                     customerInfo={{
                       teamName,
+                      selectedSport,
                       isGift,
                     }}
                     orderDetails={{

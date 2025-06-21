@@ -1,0 +1,4 @@
+Second test file for Claude Code notifications.
+Created at: $(date)
+
+The notification should now work with osascript!

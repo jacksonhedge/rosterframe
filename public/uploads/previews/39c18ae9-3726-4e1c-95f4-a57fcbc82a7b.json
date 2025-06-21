@@ -1,0 +1,38 @@
+{
+  "previewId": "39c18ae9-3726-4e1c-95f4-a57fcbc82a7b",
+  "imageUrl": "/uploads/previews/39c18ae9-3726-4e1c-95f4-a57fcbc82a7b.png",
+  "downloadUrl": "/api/preview/39c18ae9-3726-4e1c-95f4-a57fcbc82a7b/download",
+  "createdAt": "2025-06-20T20:08:23.967Z",
+  "configuration": {
+    "plaqueType": "10",
+    "plaqueStyle": "dark-maple-wood",
+    "teamName": "Matt Scherbs",
+    "playerCards": [
+      {
+        "id": "1-default",
+        "playerName": "M",
+        "position": "Quarterback",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      },
+      {
+        "id": "9-default",
+        "playerName": "C",
+        "position": "Kicker",
+        "year": 2023,
+        "brand": "Panini",
+        "series": "Base",
+        "imageUrl": "",
+        "rarity": "common",
+        "price": 15.99,
+        "shipping": 3.99
+      }
+    ],
+    "isLivePreview": true
+  }
+}

@@ -65,6 +65,10 @@ export class CardService {
     return this.supabase;
   }
 
+  public getSupabaseClient() {
+    return this.getSupabase();
+  }
+
   // Reference Data Methods
 
   async getSports(): Promise<Sport[]> {
@@ -73,7 +77,7 @@ export class CardService {
     }
 
     const { data, error } = await this.getSupabase()
-      .from('card_sports')
+      .from('sports')
       .select('*')
       .order('name');
 
@@ -87,10 +91,10 @@ export class CardService {
     }
 
     let query = this.getSupabase()
-      .from('card_positions')
+      .from('positions')
       .select(`
         *,
-        sport:card_sports(*)
+        sport:sports(*)
       `)
       .order('name');
 
