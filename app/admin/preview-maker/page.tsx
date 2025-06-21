@@ -165,6 +165,32 @@ export default function AdminPreviewMaker() {
 
   const positions = getPositionsForCount(plaqueType);
 
+  // Load saved complete layout when plaque selection changes
+  useEffect(() => {
+    const savedLayouts = JSON.parse(localStorage.getItem('completePlaqueLayouts') || '[]');
+    const matchingLayout = savedLayouts.find((layout: any) => 
+      layout.plaqueType === selectedPlaqueOption.plaqueType && 
+      layout.plaqueStyle === selectedPlaqueOption.style &&
+      layout.isBackView === (selectedPlaqueOption.hasBackOption && showCardBacks)
+    );
+    
+    if (matchingLayout) {
+      // Apply the saved layout
+      setTeamName(matchingLayout.teamName || 'Test Team');
+      setTestCards(matchingLayout.testCards || []);
+      setSelectedPositions(matchingLayout.selectedPositions || {});
+      setCardSizeAdjustment(matchingLayout.cardSizeAdjustment || 100);
+      setCardSpacingAdjustment(matchingLayout.cardSpacingAdjustment || 100);
+      setHorizontalOffset(matchingLayout.horizontalOffset || 0);
+      setVerticalOffset(matchingLayout.verticalOffset || 0);
+      
+      setStatus({ 
+        type: 'info', 
+        message: `Loaded saved layout for ${selectedPlaqueOption.slots} cards on ${selectedPlaqueOption.material}` 
+      });
+    }
+  }, [selectedPlaqueOption, showCardBacks]);
+
   const presetCards = [
     {
       id: 'preset-1',
@@ -1323,7 +1349,41 @@ export default function AdminPreviewMaker() {
                   <div className="mt-4 space-y-2">
                     <button
                       onClick={() => {
+                        // Create complete layout configuration including card data
                         const layoutConfig = {
+                          id: Date.now().toString(),
+                          plaqueType,
+                          plaqueStyle: selectedPlaqueOption.style,
+                          material: selectedPlaqueOption.material,
+                          teamName,
+                          // Card placement data
+                          testCards,
+                          selectedPositions,
+                          // Layout adjustments
+                          cardSizeAdjustment,
+                          cardSpacingAdjustment,
+                          horizontalOffset,
+                          verticalOffset,
+                          isBackView: selectedPlaqueOption.hasBackOption && showCardBacks,
+                          timestamp: new Date().toISOString()
+                        };
+                        
+                        // Save complete layout to localStorage
+                        const savedLayouts = JSON.parse(localStorage.getItem('completePlaqueLayouts') || '[]');
+                        
+                        // Remove any existing layout for this exact plaque configuration
+                        const filteredLayouts = savedLayouts.filter((layout: any) => 
+                          !(layout.plaqueType === layoutConfig.plaqueType && 
+                            layout.plaqueStyle === layoutConfig.plaqueStyle &&
+                            layout.isBackView === layoutConfig.isBackView)
+                        );
+                        
+                        // Add the new layout
+                        filteredLayouts.push(layoutConfig);
+                        localStorage.setItem('completePlaqueLayouts', JSON.stringify(filteredLayouts));
+                        
+                        // Also save just the adjustments for backward compatibility
+                        const adjustmentsOnly = {
                           plaqueType,
                           plaqueStyle: selectedPlaqueOption.style,
                           material: selectedPlaqueOption.material,
@@ -1334,15 +1394,13 @@ export default function AdminPreviewMaker() {
                           isBackView: selectedPlaqueOption.hasBackOption && showCardBacks,
                           timestamp: new Date().toISOString()
                         };
-                        
-                        // Save to localStorage
-                        const savedLayouts = JSON.parse(localStorage.getItem('plaqueLayouts') || '[]');
-                        savedLayouts.push(layoutConfig);
-                        localStorage.setItem('plaqueLayouts', JSON.stringify(savedLayouts));
+                        const savedAdjustments = JSON.parse(localStorage.getItem('plaqueLayouts') || '[]');
+                        savedAdjustments.push(adjustmentsOnly);
+                        localStorage.setItem('plaqueLayouts', JSON.stringify(savedAdjustments));
                         
                         setStatus({ 
                           type: 'success', 
-                          message: `Layout saved: ${selectedPlaqueOption.slots} cards on ${selectedPlaqueOption.material}` 
+                          message: `Complete layout saved: ${selectedPlaqueOption.slots} cards on ${selectedPlaqueOption.material} with card placements` 
                         });
                       }}
                       className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
@@ -1350,10 +1408,40 @@ export default function AdminPreviewMaker() {
                       💾 Save This Layout Configuration {selectedPlaqueOption.hasBackOption && showCardBacks ? '(Back View)' : '(Front View)'}
                     </button>
                     
+                    {/* View saved layouts button */}
+                    <button
+                      onClick={() => {
+                        const savedLayouts = JSON.parse(localStorage.getItem('completePlaqueLayouts') || '[]');
+                        const layoutsForThisPlaque = savedLayouts.filter((layout: any) => 
+                          layout.plaqueType === selectedPlaqueOption.plaqueType && 
+                          layout.plaqueStyle === selectedPlaqueOption.style
+                        );
+                        
+                        if (layoutsForThisPlaque.length > 0) {
+                          const layoutInfo = layoutsForThisPlaque.map((layout: any) => 
+                            `${layout.isBackView ? 'Back' : 'Front'} view - ${layout.testCards.length} cards - ${new Date(layout.timestamp).toLocaleDateString()}`
+                          ).join('\n');
+                          
+                          setStatus({ 
+                            type: 'info', 
+                            message: `Saved layouts for this plaque:\n${layoutInfo}` 
+                          });
+                        } else {
+                          setStatus({ 
+                            type: 'info', 
+                            message: 'No saved layouts for this plaque configuration yet' 
+                          });
+                        }
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                      📋 View Saved Layouts
+                    </button>
+                    
                     {/* Info about saved layouts */}
                     <div className="text-xs text-center text-slate-600">
-                      <p>Saved layouts will automatically apply when users</p>
-                      <p>generate previews with this plaque configuration</p>
+                      <p>Saved layouts will automatically load when you select</p>
+                      <p>this plaque configuration with matching card placements</p>
                       {selectedPlaqueOption.hasBackOption && (
                         <p className="text-purple-600 font-medium mt-1">
                           Note: Front and back views are saved separately
