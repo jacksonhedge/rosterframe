@@ -19,6 +19,11 @@ export interface InventoryCard {
   rarity: 'common' | 'rare' | 'legendary';
   rookieCard: boolean;
   notes?: string;
+  type?: 'hedge-owned' | 'ebay' | 'comc' | 'other';
+  source?: string;
+  listingUrl?: string;
+  seller?: string;
+  addedAt?: string;
 }
 
 export const cardInventory: InventoryCard[] = [
@@ -39,6 +44,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'rare',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'Super Bowl MVP - Premium QB card'
   },
   {
@@ -75,6 +81,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'common',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'Rising star TE'
   },
   {
@@ -93,6 +100,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'rare',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'Elite WR - Speed demon'
   },
   {
@@ -111,6 +119,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'rare',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'PPR fantasy beast'
   },
   {
@@ -129,6 +138,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'common',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'Reliable WR option'
   },
   {
@@ -147,6 +157,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'rare',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'Elite RB when healthy'
   },
   {
@@ -165,6 +176,7 @@ export const cardInventory: InventoryCard[] = [
     quantity: 1,
     rarity: 'common',
     rookieCard: false,
+    type: 'hedge-owned' as const,
     notes: 'Versatile RB/WR'
   }
 ];

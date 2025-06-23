@@ -85,6 +85,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       description: 'Marketplace search'
     },
     {
+      id: 'ebay-inventory',
+      title: 'eBay Inventory',
+      icon: '📥',
+      href: '/admin/ebay-inventory',
+      description: 'Import cards from eBay'
+    },
+    {
       id: 'settings',
       title: 'Settings',
       icon: '⚙️',

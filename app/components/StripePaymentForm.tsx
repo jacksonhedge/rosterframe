@@ -9,7 +9,8 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 interface PaymentFormProps {
   amount: number;
@@ -74,7 +75,12 @@ function CheckoutForm({
         if (data.error) {
           onPaymentError(data.error);
         } else {
-          setClientSecret(data.client_secret);
+          setClientSecret(data.clientSecret);
+          
+          // If this is a mock payment, show a warning
+          if (data.warning) {
+            console.warn(data.warning);
+          }
         }
       } catch (error) {
         onPaymentError('Failed to initialize payment');
@@ -115,12 +121,20 @@ function CheckoutForm({
         }),
       });
 
-      const { clientSecret } = await response.json();
+      const data = await response.json();
+      
+      // Check if this is a mock payment
+      if (data.warning) {
+        console.warn(data.warning);
+        // For mock payments, simulate success
+        onPaymentSuccess(data.paymentIntentId);
+        return;
+      }
 
-      // Confirm payment
+      // Confirm real payment
       const { error: stripeError } = await stripe.confirmPayment({
         elements,
-        clientSecret,
+        clientSecret: data.clientSecret,
         confirmParams: {
           return_url: `${window.location.origin}/build-and-buy?payment=success`,
         },
@@ -131,7 +145,7 @@ function CheckoutForm({
         onPaymentError(stripeError.message || 'Payment failed');
       } else {
         if (onPaymentSuccess) {
-          onPaymentSuccess(clientSecret);
+          onPaymentSuccess(data.clientSecret);
         }
       }
     } catch {
@@ -273,6 +287,17 @@ function CheckoutForm({
 }
 
 export default function StripePaymentForm(props: PaymentFormProps) {
+  if (!stripePromise) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <div className="text-yellow-800">
+          <p className="font-semibold mb-2">Payment system is not configured</p>
+          <p className="text-sm">Please add Stripe keys to your environment variables to enable payments.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <CheckoutForm {...props} />

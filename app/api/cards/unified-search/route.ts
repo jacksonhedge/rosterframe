@@ -185,7 +185,9 @@ function extractPlayerFromTitle(title: string): string {
   if (words.length >= 2) {
     const firstName = words[0];
     const lastName = words[1];
-    if (firstName.match(/^[A-Z][a-z]+$/) && lastName.match(/^[A-Z][a-z]+$/)) {
+    if (firstName && lastName && 
+        firstName.match(/^[A-Z][a-z]+$/) && 
+        lastName.match(/^[A-Z][a-z]+$/)) {
       return `${firstName} ${lastName}`;
     }
   }

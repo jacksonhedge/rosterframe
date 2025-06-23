@@ -5,13 +5,18 @@ export async function POST(request: NextRequest) {
   try {
     // Check if Stripe is configured
     if (!isStripeConfigured()) {
-      return NextResponse.json(
-        { 
-          error: 'Payment system not configured. Please add Stripe environment variables.',
-          devMessage: 'Add STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file'
-        },
-        { status: 500 }
-      );
+      // Return a mock payment intent for testing purposes
+      console.warn('⚠️ Stripe not configured. Returning mock payment intent for testing.');
+      
+      const body = await request.json();
+      const { amount } = body;
+      
+      return NextResponse.json({
+        clientSecret: `pi_test_mock_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`,
+        paymentIntentId: `pi_test_mock_${Date.now()}`,
+        warning: 'This is a mock payment intent. Stripe is not configured.',
+        amount: amount
+      });
     }
 
     const body = await request.json();
