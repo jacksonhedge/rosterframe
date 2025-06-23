@@ -11,10 +11,10 @@ interface PlaquePreviewWithTextProps {
 
 // Default text positioning for each plaque style - positioned on the gold nameplate
 const DEFAULT_POSITIONS = {
-  'dark-maple-wood': { x: 50, y: 90, fontSize: 20, color: '#000000' },
-  'clear': { x: 50, y: 90, fontSize: 20, color: '#000000' },
-  'clear-plaque': { x: 50, y: 90, fontSize: 20, color: '#000000' },
-  'black-marble': { x: 50, y: 90, fontSize: 20, color: '#FFD700' },
+  'dark-maple-wood': { x: 50, y: 75, fontSize: 20, color: '#000000' },
+  'clear': { x: 50, y: 75, fontSize: 20, color: '#000000' },
+  'clear-plaque': { x: 50, y: 75, fontSize: 20, color: '#000000' },
+  'black-marble': { x: 50, y: 75, fontSize: 20, color: '#000000' },
   'blank': { x: 50, y: 50, fontSize: 20, color: '#000000' }
 };
 
