@@ -34,14 +34,16 @@ import {
   SellerSearchFilters
 } from './card-types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
 export class CardService {
   private static instance: CardService;
   private supabase;
 
   constructor() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    console.log('CardService constructor called with URL:', supabaseUrl ? 'present' : 'missing');
+    
     this.supabase = supabaseUrl && supabaseKey 
       ? createClient(supabaseUrl, supabaseKey)
       : null;
