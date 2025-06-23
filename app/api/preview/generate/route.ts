@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 // Types from our preview maker service
@@ -127,6 +125,9 @@ const CARD_POSITIONS = {
   }
 };
 
+// In-memory storage for preview data (in production, use a database or cache)
+const previewCache = new Map<string, any>();
+
 export async function POST(request: NextRequest) {
   try {
     const config: PlaqueConfiguration = await request.json();
@@ -150,31 +151,33 @@ export async function POST(request: NextRequest) {
     // Generate unique preview ID
     const previewId = uuidv4();
     
-    // Generate HTML preview instead of canvas image
-    const htmlContent = await generateHTMLPreview(config);
+    // Generate HTML preview
+    const htmlContent = generateHTMLPreview(config);
     
-    // Save preview data to file system (in production, you'd use cloud storage)
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'previews');
-    await fs.mkdir(uploadsDir, { recursive: true });
-    
-    const filename = `${previewId}.html`;
-    const filepath = path.join(uploadsDir, filename);
-    await fs.writeFile(filepath, htmlContent);
-    
-    // Create response with preview data
+    // Create preview data
     const preview = {
       previewId,
-      htmlUrl: `/uploads/previews/${filename}`,
+      htmlContent,
       downloadUrl: `/api/preview/${previewId}/download`,
       createdAt: new Date().toISOString(),
       configuration: config,
     };
 
-    // Store metadata (in production, you'd save to database)
-    const metadataPath = path.join(uploadsDir, `${previewId}.json`);
-    await fs.writeFile(metadataPath, JSON.stringify(preview, null, 2));
+    // Store in memory cache
+    previewCache.set(previewId, preview);
+    
+    // Clean up old previews (keep only last 100)
+    if (previewCache.size > 100) {
+      const oldestKey = previewCache.keys().next().value;
+      previewCache.delete(oldestKey);
+    }
 
-    return NextResponse.json(preview);
+    return NextResponse.json({
+      previewId,
+      htmlUrl: `/api/preview/${previewId}/html`,
+      downloadUrl: preview.downloadUrl,
+      createdAt: preview.createdAt,
+    });
 
   } catch (error) {
     console.error('Error generating preview:', error);
@@ -185,7 +188,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generateHTMLPreview(config: PlaqueConfiguration): Promise<string> {
+// Export for use in other routes
+export function getPreview(previewId: string) {
+  return previewCache.get(previewId);
+}
+
+function generateHTMLPreview(config: PlaqueConfiguration): string {
   // Get positions for the selected plaque type
   const positions = CARD_POSITIONS[config.plaqueType];
   
@@ -516,4 +524,4 @@ async function generateHTMLPreview(config: PlaqueConfiguration): Promise<string>
   `;
 
   return html;
-} 
+}

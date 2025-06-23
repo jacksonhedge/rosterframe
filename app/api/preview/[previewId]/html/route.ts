@@ -14,23 +14,18 @@ export async function GET(
         { status: 404 }
       );
     }
-    
-    const teamName = preview.configuration.teamName.toLowerCase().replace(/\s+/g, '-');
-    const fileName = `roster-frame-${teamName}.html`;
-    
-    // Return HTML file with download headers
+
+    // Return HTML content
     return new NextResponse(preview.htmlContent, {
       headers: {
         'Content-Type': 'text/html',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'public, max-age=3600',
       },
     });
-    
   } catch (error) {
-    console.error('Error downloading preview:', error);
+    console.error('Error fetching preview:', error);
     return NextResponse.json(
-      { error: 'Failed to download preview' },
+      { error: 'Failed to fetch preview' },
       { status: 500 }
     );
   }
