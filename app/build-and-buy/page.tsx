@@ -671,18 +671,18 @@ export default function BuildAndBuy() {
           {/* Step 1: Setup & Plaque Selection */}
           {currentStep === 'setup' && (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 mt-8">
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-black text-amber-900 mb-4">
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-amber-900 mb-3">
                   Build Your 
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-600"> Dream Plaque</span>
                 </h1>
-                <p className="text-xl text-amber-700">Transform your fantasy roster into a legendary display</p>
+                <p className="text-base text-amber-700">Transform your fantasy roster into a legendary display</p>
               </div>
               
               <div className="space-y-8">
                 {/* Team Name */}
                 <div>
-                  <label htmlFor="team-name" className="block text-xl font-bold text-amber-800 mb-4">
+                  <label htmlFor="team-name" className="block text-base font-semibold text-amber-800 mb-3">
                     🏆 What's your team name?
                   </label>
                   <input
@@ -690,14 +690,14 @@ export default function BuildAndBuy() {
                     id="team-name"
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
-                    className="w-full px-6 py-4 text-xl bg-white/70 border-2 border-amber-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-amber-400"
+                    className="w-full px-4 py-3 text-base bg-white/70 border-2 border-amber-200 rounded-lg focus:outline-none focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder-amber-400"
                     placeholder="Enter your legendary team name..."
                   />
                 </div>
 
                 {/* Sport Selection */}
                 <div>
-                  <label className="block text-xl font-bold text-amber-800 mb-4">
+                  <label className="block text-base font-semibold text-amber-800 mb-3">
                     🏈 Pick a Sport
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -710,24 +710,24 @@ export default function BuildAndBuy() {
                       <button
                         key={sport.id}
                         onClick={() => setSelectedSport(sport.id as 'NFL' | 'MLB' | 'NBA' | 'NHL')}
-                        className={`relative p-6 rounded-xl border-2 transition-all transform hover:scale-105 ${
+                        className={`relative p-3 rounded-lg border-2 transition-all transform hover:scale-105 ${
                           selectedSport === sport.id
                             ? `bg-gradient-to-br ${sport.color} text-white border-transparent shadow-lg`
                             : 'bg-white/70 border-amber-200 hover:border-amber-400'
                         }`}
                       >
                         <div className="text-center">
-                          <div className="text-4xl mb-2">{sport.icon}</div>
-                          <div className={`font-bold text-lg ${
+                          <div className="text-2xl mb-1">{sport.icon}</div>
+                          <div className={`font-semibold text-sm ${
                             selectedSport === sport.id ? 'text-white' : 'text-amber-800'
                           }`}>
                             {sport.name}
                           </div>
                         </div>
                         {selectedSport === sport.id && (
-                          <div className="absolute top-2 right-2">
-                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                              <span className="text-sm">✓</span>
+                          <div className="absolute top-1 right-1">
+                            <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                              <span className="text-xs">✓</span>
                             </div>
                           </div>
                         )}
@@ -738,9 +738,9 @@ export default function BuildAndBuy() {
 
                 {/* Plaque Selection */}
                 <div>
-                  <div className="text-center mb-6">
-                    <h3 className="text-2xl font-black text-amber-900 mb-3">Choose Your Plaque Style</h3>
-                    <p className="text-lg text-amber-700">Select the perfect finish for your fantasy team display</p>
+                  <div className="text-center mb-4">
+                    <h3 className="text-lg font-bold text-amber-900 mb-2">Choose Your Plaque Style</h3>
+                    <p className="text-sm text-amber-700">Select the perfect finish for your fantasy team display</p>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -815,7 +815,7 @@ export default function BuildAndBuy() {
                       }
                     }}
                     disabled={!teamName.trim()}
-                    className={`w-full py-5 text-xl font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg ${
+                    className={`w-full py-3 text-base font-semibold rounded-lg transition-all transform hover:scale-[1.02] shadow-lg ${
                       teamName.trim()
                         ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white hover:from-amber-700 hover:to-yellow-700'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -834,9 +834,9 @@ export default function BuildAndBuy() {
           {/* Step 2: Roster Building */}
           {currentStep === 'building' && (
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-black text-amber-900 mb-3">Build Your Roster</h2>
-                <p className="text-lg text-amber-700">Add your players and select their cards</p>
+              <div className="text-center mb-4">
+                <h2 className="text-xl font-bold text-amber-900 mb-2">Build Your Roster</h2>
+                <p className="text-sm text-amber-700">Add your players and select their cards</p>
               </div>
               
               {/* Live Plaque Preview */}
@@ -855,16 +855,16 @@ export default function BuildAndBuy() {
               
               <div className="space-y-6">
                 {/* Player Database Info */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border-2 border-blue-200">
                   <div className="text-center">
-                    <h3 className="text-xl font-bold text-blue-800 mb-2">
+                    <h3 className="text-base font-semibold text-blue-800 mb-1">
                       {selectedSport === 'NFL' && '🏈'}
                       {selectedSport === 'MLB' && '⚾'}
                       {selectedSport === 'NBA' && '🏀'}
                       {selectedSport === 'NHL' && '🏒'}
                       {' '}Search {selectedSport} Player Database
                     </h3>
-                    <p className="text-sm text-blue-600">Find real {selectedSport} players with trading cards available</p>
+                    <p className="text-xs text-blue-600">Find real {selectedSport} players with trading cards available</p>
                   </div>
                 </div>
 
@@ -960,10 +960,10 @@ export default function BuildAndBuy() {
                   <div className="flex justify-center">
                     <button
                       onClick={addPosition}
-                      className="bg-amber-100 text-amber-700 px-6 py-3 rounded-xl font-semibold hover:bg-amber-200 transition-all border-2 border-amber-300 flex items-center space-x-2"
+                      className="bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-medium hover:bg-amber-200 transition-all border-2 border-amber-300 flex items-center space-x-2"
                     >
-                      <span className="text-xl">+</span>
-                      <span>Add Position</span>
+                      <span className="text-lg">+</span>
+                      <span className="text-sm">Add Position</span>
                     </button>
                   </div>
                 )}
@@ -971,8 +971,8 @@ export default function BuildAndBuy() {
                 {/* Import Options */}
                 <div className="border-t border-amber-200 pt-6">
                   <div className="text-center mb-4">
-                    <h3 className="text-lg font-semibold text-amber-800 mb-2">Import Your Roster</h3>
-                    <p className="text-sm text-amber-600">Quick import from your fantasy platform</p>
+                    <h3 className="text-base font-semibold text-amber-800 mb-1">Import Your Roster</h3>
+                    <p className="text-xs text-amber-600">Quick import from your fantasy platform</p>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     {['Sleeper', 'ESPN', 'Yahoo'].map((platform) => (
@@ -991,7 +991,7 @@ export default function BuildAndBuy() {
                 <button
                   onClick={() => setCurrentStep('cards')}
                   disabled={!canProceedToCards()}
-                  className={`w-full py-4 text-lg font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg ${
+                  className={`w-full py-3 text-base font-semibold rounded-lg transition-all transform hover:scale-[1.02] shadow-lg ${
                     canProceedToCards()
                       ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white hover:from-amber-700 hover:to-yellow-700'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -1008,9 +1008,9 @@ export default function BuildAndBuy() {
             <>
               {/* Card Selection */}
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-black text-amber-900 mb-3">Select Player Cards</h2>
-                  <p className="text-lg text-amber-700">Choose the perfect cards for each player in your roster</p>
+                <div className="text-center mb-4">
+                  <h2 className="text-xl font-bold text-amber-900 mb-2">Select Player Cards</h2>
+                  <p className="text-sm text-amber-700">Choose the perfect cards for each player in your roster</p>
                   <div className="mt-4 flex justify-center space-x-4">
                     <div className="bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
                       <span className="text-sm font-semibold text-amber-700">
@@ -1055,8 +1055,8 @@ export default function BuildAndBuy() {
                             {rosterPositions.indexOf(position) + 1}
                           </span>
                           <div>
-                            <h3 className="text-xl font-bold text-amber-900">{position.playerName}</h3>
-                            <span className="text-sm text-amber-600 bg-amber-100 px-2 py-1 rounded">
+                            <h3 className="text-base font-semibold text-amber-900">{position.playerName}</h3>
+                            <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">
                               {position.position}
                             </span>
                           </div>
@@ -1318,7 +1318,7 @@ export default function BuildAndBuy() {
                 
                 {/* Shipping Options */}
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                  <h3 className="text-xl font-bold text-blue-900 mb-4">📦 Shipping Options</h3>
+                  <h3 className="text-base font-semibold text-blue-900 mb-3">📦 Shipping Options</h3>
                   <div className="space-y-3">
                     {Object.entries(shippingOptions).map(([key, option]) => (
                       <div 
@@ -1353,7 +1353,7 @@ export default function BuildAndBuy() {
                 
                 {/* Portfolio Value Tracking */}
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
-                  <h3 className="text-xl font-bold text-purple-900 mb-4">📈 Portfolio Value Tracking</h3>
+                  <h3 className="text-base font-semibold text-purple-900 mb-3">📈 Portfolio Value Tracking</h3>
                   <div className="p-4 bg-white/70 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -1395,7 +1395,7 @@ export default function BuildAndBuy() {
                 
                 {/* Promo Code Section */}
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
-                  <h3 className="text-xl font-bold text-purple-900 mb-4">Have a Promo Code?</h3>
+                  <h3 className="text-base font-semibold text-purple-900 mb-3">Have a Promo Code?</h3>
                   <div className="flex space-x-3">
                     <input
                       type="text"
@@ -1519,7 +1519,7 @@ export default function BuildAndBuy() {
 
                   {/* Card Summary */}
                   <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
-                    <h3 className="text-xl font-bold text-amber-900 mb-4">Selected Cards</h3>
+                    <h3 className="text-base font-semibold text-amber-900 mb-3">Selected Cards</h3>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {Object.entries(selectedCards).map(([positionId, card]) => {
                         const position = rosterPositions.find(p => p.id === positionId);
