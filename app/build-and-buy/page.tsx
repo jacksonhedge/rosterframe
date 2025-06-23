@@ -389,7 +389,8 @@ export default function BuildAndBuy() {
       return 1.00;
     }
     
-    const plaquePrice = selectedPlaque?.price || 78.00;
+    // Calculate plaque price based on number of positions at $1.99 per slot
+    const plaquePrice = rosterPositions.length * 1.99;
     const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
     let subtotal = plaquePrice + cardsPrice;
     
@@ -410,7 +411,7 @@ export default function BuildAndBuy() {
   const calculateSavings = () => {
     if (promoApplied) {
       // If promo is applied, show the full savings
-      const plaquePrice = selectedPlaque?.price || 78.00;
+      const plaquePrice = rosterPositions.length * 1.99;
       const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
       const shippingCost = shippingOptions[selectedShipping].price;
       const subscriptionCost = subscribeToPortfolio ? 4.99 : 0;
@@ -418,7 +419,7 @@ export default function BuildAndBuy() {
       return originalTotal - 1.00;
     }
     if (!isPreOrder) return 0;
-    const plaquePrice = selectedPlaque?.price || 78.00;
+    const plaquePrice = rosterPositions.length * 1.99;
     const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
     const subtotal = plaquePrice + cardsPrice;
     return subtotal * preOrderDiscount;
@@ -453,9 +454,9 @@ export default function BuildAndBuy() {
       id: 'dark-maple-wood',
       name: 'Dark Maple Wood Plaque',
       material: 'Premium dark maple wood finish',
-      description: `Premium dark maple wood finish with ${rosterPositions.length} card slots`,
-      price: getPlaqueType() === '8' ? 129.99 : 149.99,
-      pricePerSlot: getPlaqueType() === '8' ? 16.25 : 15.00,
+      description: `Premium dark maple wood finish with ${rosterPositions.length} card slots (hardware included)`,
+      price: rosterPositions.length * 1.99,
+      pricePerSlot: 1.99,
       gradient: 'from-amber-50 to-amber-100',
       border: 'border-amber-200',
       accent: 'text-amber-800',
@@ -467,9 +468,9 @@ export default function BuildAndBuy() {
       id: 'clear',
       name: 'Clear Plaque',
       material: 'Crystal clear acrylic',
-      description: `Crystal clear acrylic with ${rosterPositions.length} card slots - shows front or back`,
-      price: getPlaqueType() === '8' ? 149.99 : 169.99,
-      pricePerSlot: getPlaqueType() === '8' ? 18.75 : 17.00,
+      description: `Crystal clear acrylic with ${rosterPositions.length} card slots (hardware included) - shows front or back`,
+      price: rosterPositions.length * 1.99,
+      pricePerSlot: 1.99,
       gradient: 'from-blue-50 to-indigo-50',
       border: 'border-blue-200',
       accent: 'text-blue-800',
@@ -482,9 +483,9 @@ export default function BuildAndBuy() {
       id: 'black-marble',
       name: 'Black Marble Plaque',
       material: 'Elegant black marble finish',
-      description: `Elegant black marble finish with ${rosterPositions.length} card slots`,
-      price: getPlaqueType() === '8' ? 159.99 : 179.99,
-      pricePerSlot: getPlaqueType() === '8' ? 20.00 : 18.00,
+      description: `Elegant black marble finish with ${rosterPositions.length} card slots (hardware included)`,
+      price: rosterPositions.length * 1.99,
+      pricePerSlot: 1.99,
       gradient: 'from-gray-800 to-black',
       border: 'border-gray-400',
       accent: 'text-gray-100',
@@ -1011,10 +1012,16 @@ export default function BuildAndBuy() {
                 <div className="text-center mb-4">
                   <h2 className="text-xl font-bold text-amber-900 mb-2">Select Player Cards</h2>
                   <p className="text-sm text-amber-700">Choose the perfect cards for each player in your roster</p>
+                  <div className="mt-3 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200 max-w-2xl mx-auto">
+                    <p className="text-xs text-blue-800">
+                      <span className="font-semibold">💡 Note:</span> Each plaque slot costs $1.99 and includes mounting hardware. 
+                      You can purchase cards here or use your own cards and we'll provide the screws to mount them!
+                    </p>
+                  </div>
                   <div className="mt-4 flex justify-center space-x-4">
                     <div className="bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
                       <span className="text-sm font-semibold text-amber-700">
-                        Plaque: ${selectedPlaque?.price.toFixed(2) || '78.00'}
+                        Plaque ({rosterPositions.length} slots × $1.99): ${(rosterPositions.length * 1.99).toFixed(2)}
                       </span>
                     </div>
                     <div className="bg-yellow-50 px-4 py-2 rounded-lg border border-yellow-200">
@@ -1476,7 +1483,7 @@ export default function BuildAndBuy() {
                       <div className="border-t border-amber-300 pt-3 mt-3 space-y-2">
                         <div className="flex justify-between items-center text-sm text-gray-600">
                           <span>Plaque & Cards:</span>
-                          <span>${((selectedPlaque?.price || 0) + Object.values(selectedCards).reduce((sum, card) => sum + card.price + (card.shipping || 0), 0)).toFixed(2)}</span>
+                          <span>${((rosterPositions.length * 1.99) + Object.values(selectedCards).reduce((sum, card) => sum + card.price + (card.shipping || 0), 0)).toFixed(2)}</span>
                         </div>
                         {isPreOrder && (
                           <div className="flex justify-between items-center text-sm text-green-600">
@@ -1532,9 +1539,9 @@ export default function BuildAndBuy() {
                       })}
                       <div className="border-t border-yellow-300 pt-2 mt-2">
                         <div className="flex justify-between items-center">
-                          <span className="font-bold">Plaque Cost:</span>
+                          <span className="font-bold">Plaque Cost ({rosterPositions.length} slots × $1.99):</span>
                           <span className="font-bold text-amber-600">
-                            ${selectedPlaque?.price.toFixed(2) || '78.00'}
+                            ${(rosterPositions.length * 1.99).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
