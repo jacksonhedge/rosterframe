@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: "Create custom frames featuring your fantasy team players with sports cards. Premium quality plaques in Wood, Glass, and Acrylic finishes. Order your personalized display today!",
   keywords: "fantasy sports, custom frames, sports cards, plaques, fantasy football, fantasy baseball, personalized gifts",
   authors: [{ name: "Roster Frame" }],
+  generator: "Next.js",
+  applicationName: "Roster Frame",
+  referrer: "origin-when-cross-origin",
+  metadataBase: new URL("https://rosterframe.com"),
   icons: {
     icon: [
       { url: "/favicon.png", type: "image/png" },

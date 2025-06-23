@@ -7,6 +7,7 @@ import { Button } from "./components/ui/Button";
 import { Footer } from "./components/ui/Footer";
 
 export default function Home() {
+  // Deployment version: 2025-06-23-v2
   const features = [
     {
       icon: (
