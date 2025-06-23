@@ -47,6 +47,8 @@ export default function BuildAndBuy() {
     pricePerSlot: number;
   } | null>(null);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [loadingCards, setLoadingCards] = useState<Record<string, boolean>>({});
+  const [playerCards, setPlayerCards] = useState<Record<string, CardOption[]>>({});
 
   // Helper function to get saved preview for a specific plaque configuration
   const getSavedPreviewForPlaque = (plaqueType: string, plaqueStyle: string) => {
@@ -237,11 +239,34 @@ export default function BuildAndBuy() {
     setSelectedCards(session.selectedCards || {});
   };
 
+  // Fetch real cards from eBay for a player
+  const fetchPlayerCards = async (playerName: string, positionId: string) => {
+    if (!playerName.trim() || playerCards[positionId]) return;
+    
+    setLoadingCards(prev => ({ ...prev, [positionId]: true }));
+    
+    try {
+      const response = await fetch(`/api/cards/search-player?player=${encodeURIComponent(playerName)}&sport=${selectedSport}`);
+      const data = await response.json();
+      
+      if (data.success && data.cards) {
+        setPlayerCards(prev => ({ ...prev, [positionId]: data.cards }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch player cards:', error);
+    } finally {
+      setLoadingCards(prev => ({ ...prev, [positionId]: false }));
+    }
+  };
+
   // Generate card options for a player
-  const generateCardOptions = (playerName: string): CardOption[] => {
+  const generateCardOptions = (playerName: string, positionId: string): CardOption[] => {
     if (!playerName.trim()) return [];
     
-    // Check if we have real cards for this player
+    // First check if we have fetched eBay cards for this player
+    const ebayCards = playerCards[positionId] || [];
+    
+    // Check if we have real cards for this player in inventory
     const inventoryCards = getCardsByPlayer(playerName);
     const realCards = inventoryCards.map(card => ({
       id: card.id,
@@ -323,8 +348,8 @@ export default function BuildAndBuy() {
       }
     ];
     
-    // Put real cards first, then default options
-    return [...realCards, ...defaultOptions];
+    // Put eBay cards first, then inventory cards, then default options
+    return [...ebayCards, ...realCards, ...defaultOptions];
   };
 
   const addPosition = () => {
@@ -972,8 +997,14 @@ export default function BuildAndBuy() {
                       ) : (
                         <PlayerSearch
                           value={position.playerName}
-                          onChange={(playerName, card) => {
+                          onChange={async (playerName, card) => {
                             updatePosition(position.id, 'playerName', playerName);
+                            
+                            // Fetch eBay cards for this player
+                            if (playerName && playerName.trim().length > 2) {
+                              await fetchPlayerCards(playerName, position.id);
+                            }
+                            
                             // Auto-select a default card when player is selected
                             if (playerName && !selectedCards[position.id]) {
                               const defaultCard: CardOption = {
@@ -1080,13 +1111,13 @@ export default function BuildAndBuy() {
                 {rosterPositions.filter(pos => pos.playerName.trim()).map((position) => {
                   const isDefense = position.position === 'Defense/ST';
                   const cardOptions = isDefense 
-                    ? generateCardOptions(position.playerName).map(card => ({
+                    ? generateCardOptions(position.playerName, position.id).map(card => ({
                         ...card,
                         name: `${position.playerName} Defense`,
                         brand: card.brand === 'Panini Prizm' ? 'Panini' : card.brand,
                         series: card.series === 'Base' ? 'Team Defense' : card.series,
                       }))
-                    : generateCardOptions(position.playerName);
+                    : generateCardOptions(position.playerName, position.id);
                   const selectedCard = selectedCards[position.id];
                   const isCollapsed = collapsedSections[position.id];
                   
@@ -1148,13 +1179,31 @@ export default function BuildAndBuy() {
                       {!isCollapsed && (
                         <div className="px-6 pb-6 border-t border-amber-200/50">
                           <div className="pt-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                              {cardOptions.map((card) => {
+                            {loadingCards[position.id] ? (
+                              <div className="text-center py-8">
+                                <div className="inline-flex items-center space-x-2">
+                                  <svg className="animate-spin h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  <span className="text-amber-600 font-medium">Searching for {position.playerName} cards on eBay...</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {cardOptions.map((card) => {
                                 const isSelected = selectedCard?.id === card.id;
                                 return (
                                   <div
                                     key={card.id}
-                                    onClick={() => selectCard(position.id, card)}
+                                    onClick={() => {
+                                      if (card.series === 'Browse eBay') {
+                                        // Open eBay search in new tab
+                                        window.open(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(position.playerName + ' trading card')}&_sacat=212`, '_blank');
+                                      } else {
+                                        selectCard(position.id, card);
+                                      }
+                                    }}
                                     className={`border-2 rounded-lg p-4 cursor-pointer transition-all transform hover:scale-105 ${
                                       isSelected 
                                         ? 'border-amber-500 bg-amber-50 shadow-lg' 
@@ -1253,6 +1302,7 @@ export default function BuildAndBuy() {
                                 );
                               })}
                             </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1260,8 +1310,6 @@ export default function BuildAndBuy() {
                   );
                 })}
               </div>
-
-                            </div>
               
               {/* Preview Generator */}
               {canProceedToPurchase() && (
