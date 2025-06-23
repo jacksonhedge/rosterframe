@@ -356,6 +356,55 @@ export default function BuildAndBuy() {
         <main className="container mx-auto px-4 py-8">
           <div className="h-16 md:h-20"></div>
           
+          {/* Progress Steps */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center space-x-4 md:space-x-8">
+              {[
+                { step: 1, label: 'Setup', value: 'setup' },
+                { step: 2, label: 'Build Roster', value: 'building' },
+                { step: 3, label: 'Select Cards', value: 'cards' },
+                { step: 4, label: 'Checkout', value: 'purchase' },
+                { step: 5, label: 'Complete', value: 'done' }
+              ].map((item, index) => (
+                <div key={item.step} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-sm md:text-base transition-all ${
+                        currentStep === item.value
+                          ? 'bg-amber-600 text-white shadow-lg scale-110'
+                          : item.step < ['setup', 'building', 'cards', 'purchase', 'done'].indexOf(currentStep) + 1
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-300 text-gray-600'
+                      }`}
+                    >
+                      {item.step < ['setup', 'building', 'cards', 'purchase', 'done'].indexOf(currentStep) + 1 ? (
+                        <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        item.step
+                      )}
+                    </div>
+                    <span className={`text-xs md:text-sm mt-2 font-medium ${
+                      currentStep === item.value ? 'text-amber-700' : 'text-gray-600'
+                    }`}>
+                      {item.label}
+                    </span>
+                  </div>
+                  {index < 4 && (
+                    <div
+                      className={`hidden md:block w-16 lg:w-24 h-1 mx-2 rounded ${
+                        item.step < ['setup', 'building', 'cards', 'purchase', 'done'].indexOf(currentStep) + 1
+                          ? 'bg-green-600'
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 gap-8">
             {/* Step 1: Setup */}
             {currentStep === 'setup' && (
