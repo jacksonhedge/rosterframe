@@ -168,6 +168,14 @@ export const MATERIALS: Record<string, Material> = {
     isAvailable: false, // Coming soon
     premiumFeatures: ['ultra-premium', 'unique-texture', 'lightweight-strong'],
   },
+  GOLD_METAL: {
+    id: 'gold-metal',
+    name: 'Gold Metal',
+    multiplier: 2.2,
+    description: 'Luxurious gold-finished metal with custom engraving',
+    isAvailable: true,
+    premiumFeatures: ['custom-engraving', 'gold-finish', 'premium-weight', 'tarnish-resistant'],
+  },
 };
 
 // =============================================================================

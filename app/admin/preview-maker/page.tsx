@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { previewMaker, type PlaqueConfiguration, type CompiledPreview, type PlayerCardData } from '@/app/lib/preview-maker';
 import PlayerSearch from '@/app/components/PlayerSearch';
+import SavedPreviewDebug from '@/app/components/SavedPreviewDebug';
+import EmailPreviewModal from '@/app/components/EmailPreviewModal';
 
 interface TestCard {
   id: string;
@@ -37,6 +39,9 @@ export default function AdminPreviewMaker() {
     type: null,
     message: ''
   });
+  const [previewUpdateKey, setPreviewUpdateKey] = useState(0); // Force re-render when preview updates
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedPreviewForEmail, setSelectedPreviewForEmail] = useState<CompiledPreview | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,11 +49,14 @@ export default function AdminPreviewMaker() {
   const getSavedPreviewForPlaque = (plaqueType: string, plaqueStyle: string, isBackView?: boolean) => {
     try {
       const savedPreviews = JSON.parse(localStorage.getItem('savedPreviews') || '[]');
-      return savedPreviews.find((preview: any) => 
+      
+      const matchingPreview = savedPreviews.find((preview: any) => 
         preview.plaqueType === plaqueType && 
         preview.plaqueStyle === plaqueStyle &&
         (isBackView === undefined || preview.isBackView === isBackView)
       );
+      
+      return matchingPreview;
     } catch (error) {
       console.error('Error loading saved preview:', error);
       return null;
@@ -168,6 +176,23 @@ export default function AdminPreviewMaker() {
   // Track if we're actively editing to prevent auto-loading
   const [isEditing, setIsEditing] = useState(false);
   const [lastLoadedLayout, setLastLoadedLayout] = useState<string | null>(null);
+
+  // Force re-render when plaque selection changes to check for saved previews
+  useEffect(() => {
+    setPreviewUpdateKey(prev => prev + 1);
+  }, [selectedPlaqueOption.plaqueType, selectedPlaqueOption.style, showCardBacks]);
+
+  // Check for saved previews on mount
+  useEffect(() => {
+    const savedPreview = getSavedPreviewForPlaque(
+      selectedPlaqueOption.plaqueType,
+      selectedPlaqueOption.style,
+      selectedPlaqueOption.hasBackOption && showCardBacks
+    );
+    if (savedPreview) {
+      setPreviewUpdateKey(prev => prev + 1);
+    }
+  }, []);
 
   // Load saved complete layout when plaque selection changes
   useEffect(() => {
@@ -394,6 +419,7 @@ export default function AdminPreviewMaker() {
         isBackView: showCardBacks && selectedPlaqueOption.hasBackOption
       };
       
+      
       // Remove any existing preview for this exact configuration
       const filteredPreviews = savedPreviews.filter((p: any) => 
         !(p.plaqueType === previewInfo.plaqueType && 
@@ -405,7 +431,10 @@ export default function AdminPreviewMaker() {
       filteredPreviews.push(previewInfo);
       localStorage.setItem('savedPreviews', JSON.stringify(filteredPreviews));
       
-      setStatus({ type: 'success', message: 'Preview generated successfully!' });
+      // Force re-render to update Selected Plaque display
+      setPreviewUpdateKey(prev => prev + 1);
+      
+      setStatus({ type: 'success', message: 'Preview generated and saved! Check the Selected Plaque section.' });
 
     } catch (error) {
       console.error('Error generating preview:', error);
@@ -538,20 +567,55 @@ export default function AdminPreviewMaker() {
             <div className="lg:col-span-1">
               <div className="bg-blue-50 rounded-xl border-2 border-blue-500 p-4">
                 <h4 className="font-semibold text-blue-800 mb-3 text-center">Selected Plaque</h4>
+                {getSavedPreviewForPlaque(
+                  selectedPlaqueOption.plaqueType,
+                  selectedPlaqueOption.style,
+                  selectedPlaqueOption.hasBackOption && showCardBacks
+                ) && (
+                  <div className="mb-2 text-center">
+                    <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Using Saved Preview
+                    </span>
+                  </div>
+                )}
                 <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: '4/3' }}>
-                  <Image
-                    src={selectedPlaqueOption.baseImage || selectedPlaqueOption.image}
-                    alt={selectedPlaqueOption.name}
-                    fill
-                    className="object-contain"
-                  />
-                  {/* Overlay card positions */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {(() => {
-                      const layout = previewMaker.getCardPositions(selectedPlaqueOption.plaqueType);
-                      const xavierWorthyCardUrl = 'https://wdwbkuhanclpkbgxgwdg.supabase.co/storage/v1/object/public/card-images/card-images/xavier_worthy_2025_cc1af96a-8680-474e-9f0a-911a98495fe3.jpg';
-                      
-                      return Array.from({ length: parseInt(selectedPlaqueOption.plaqueType) }).map((_, i) => {
+                  {(() => {
+                    // Check for saved preview first
+                    const savedPreview = getSavedPreviewForPlaque(
+                      selectedPlaqueOption.plaqueType,
+                      selectedPlaqueOption.style,
+                      selectedPlaqueOption.hasBackOption && showCardBacks
+                    );
+                    const imageSrc = savedPreview?.imageUrl || selectedPlaqueOption.baseImage || selectedPlaqueOption.image;
+                    
+                    return (
+                      <img
+                        key={`selected-plaque-${previewUpdateKey}-${Date.now()}`}
+                        src={`${imageSrc}?t=${previewUpdateKey}`}
+                        alt={selectedPlaqueOption.name}
+                        className="absolute inset-0 w-full h-full object-contain"
+                        onError={(e) => {
+                          console.error('Image failed to load:', imageSrc);
+                          e.currentTarget.src = selectedPlaqueOption.baseImage || selectedPlaqueOption.image;
+                        }}
+                      />
+                    );
+                  })()}
+                  {/* Overlay card positions - only show if not using saved preview */}
+                  {!getSavedPreviewForPlaque(
+                    selectedPlaqueOption.plaqueType,
+                    selectedPlaqueOption.style,
+                    selectedPlaqueOption.hasBackOption && showCardBacks
+                  ) && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      {(() => {
+                        const layout = previewMaker.getCardPositions(selectedPlaqueOption.plaqueType);
+                        const xavierWorthyCardUrl = 'https://wdwbkuhanclpkbgxgwdg.supabase.co/storage/v1/object/public/card-images/card-images/xavier_worthy_2025_cc1af96a-8680-474e-9f0a-911a98495fe3.jpg';
+                        
+                        return Array.from({ length: parseInt(selectedPlaqueOption.plaqueType) }).map((_, i) => {
                         const pos = layout.positions[i];
                         
                         const leftPercent = (pos.x / layout.imageWidth) * 100;
@@ -580,6 +644,7 @@ export default function AdminPreviewMaker() {
                       });
                     })()}
                   </div>
+                  )}
                 </div>
                 <div className="mt-3 text-center">
                   <h3 className="font-bold text-lg text-slate-800">{selectedPlaqueOption.slots} Cards</h3>
@@ -611,11 +676,24 @@ export default function AdminPreviewMaker() {
                     <div className="p-2">
                       <div className="relative w-full h-20 rounded overflow-hidden bg-slate-100 mb-1">
                         <Image
-                          src={option.baseImage || option.image}
+                          key={`grid-${option.id}-${previewUpdateKey}`}
+                          src={(() => {
+                            const savedPreview = getSavedPreviewForPlaque(
+                              option.plaqueType,
+                              option.style,
+                              option.hasBackOption && showCardBacks
+                            );
+                            return savedPreview?.imageUrl || option.baseImage || option.image;
+                          })()}
                           alt={option.name}
                           fill
                           className="object-cover"
                         />
+                        {getSavedPreviewForPlaque(option.plaqueType, option.style, option.hasBackOption && showCardBacks) && (
+                          <div className="absolute top-1 right-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          </div>
+                        )}
                       </div>
                       <h3 className="font-bold text-xs text-slate-800">{option.slots} Cards</h3>
                       <p className="text-xs text-slate-600">{option.material}</p>
@@ -1550,6 +1628,15 @@ export default function AdminPreviewMaker() {
                         {preview.configuration.playerCards.length} cards
                       </div>
                       <div className="flex space-x-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setSelectedPreviewForEmail(preview);
+                            setShowEmailModal(true);
+                          }}
+                          className="flex-1 bg-green-600 text-white text-center py-2 px-3 rounded text-sm font-medium hover:bg-green-700 transition-colors"
+                        >
+                          📧 Email
+                        </button>
                         <a
                           href={preview.downloadUrl}
                           target="_blank"
@@ -1622,6 +1709,24 @@ export default function AdminPreviewMaker() {
           </div>
         </div>
       </div>
+      <SavedPreviewDebug />
+      
+      {/* Email Modal */}
+      {showEmailModal && selectedPreviewForEmail && (
+        <EmailPreviewModal
+          isOpen={showEmailModal}
+          onClose={() => {
+            setShowEmailModal(false);
+            setSelectedPreviewForEmail(null);
+          }}
+          previewData={{
+            imageUrl: selectedPreviewForEmail.imageUrl,
+            teamName: selectedPreviewForEmail.configuration.teamName,
+            plaqueType: selectedPreviewForEmail.configuration.plaqueType,
+            plaqueStyle: selectedPreviewForEmail.configuration.plaqueStyle,
+          }}
+        />
+      )}
     </div>
   );
 } 

@@ -4,6 +4,7 @@ import { Navigation } from "./components/ui/Navigation";
 import { Hero } from "./components/ui/Hero";
 import { ScrollFade, StaggeredContainer } from "./components/animations/ScrollFade";
 import { Button } from "./components/ui/Button";
+import { Footer } from "./components/ui/Footer";
 
 export default function Home() {
   const features = [
@@ -144,6 +145,9 @@ export default function Home() {
           </ScrollFade>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

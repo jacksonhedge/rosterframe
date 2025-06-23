@@ -26,6 +26,7 @@ interface PaymentFormProps {
     numCards: number;
     isPreOrder?: boolean;
     savings?: number;
+    promoCode?: string;
   };
 }
 
@@ -40,6 +41,8 @@ function CheckoutForm({
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState<string>('');
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardError, setCardError] = useState<string>('');
 
   useEffect(() => {
     // Create payment intent when component mounts
@@ -61,6 +64,7 @@ function CheckoutForm({
               is_pre_order: orderDetails.isPreOrder?.toString() || 'false',
               pre_order_savings: orderDetails.savings?.toString() || '0',
               expected_delivery: orderDetails.isPreOrder ? 'March 2025' : '7-10 business days',
+              promo_code: orderDetails.promoCode || '',
             },
           }),
         });
@@ -163,7 +167,13 @@ function CheckoutForm({
             Card Information
           </label>
           <div className="p-4 border-2 border-amber-200 rounded-lg bg-white">
-            <CardElement options={cardElementOptions} />
+            <CardElement 
+              options={cardElementOptions}
+              onChange={(event) => {
+                setCardComplete(event.complete);
+                setCardError(event.error?.message || '');
+              }}
+            />
           </div>
         </div>
 
@@ -206,9 +216,9 @@ function CheckoutForm({
 
         <button
           type="submit"
-          disabled={!stripe || isLoading || !clientSecret}
+          disabled={!stripe || isLoading || !clientSecret || !cardComplete}
           className={`w-full py-4 text-lg font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg ${
-            !stripe || isLoading || !clientSecret
+            !stripe || isLoading || !clientSecret || !cardComplete
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
           }`}
@@ -224,6 +234,39 @@ function CheckoutForm({
               : `💳 Pay $${amount.toFixed(2)}`
           )}
         </button>
+        
+        {/* Checklist for why button might be disabled */}
+        {(!stripe || !clientSecret || !cardComplete) && (
+          <div className="mt-4 p-3 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Complete these steps to enable payment:</p>
+            <ul className="space-y-1 text-sm text-gray-600">
+              {!stripe && (
+                <li className="flex items-center">
+                  <span className="text-red-500 mr-2">✗</span>
+                  <span>Payment system is loading...</span>
+                </li>
+              )}
+              {!clientSecret && (
+                <li className="flex items-center">
+                  <span className="text-red-500 mr-2">✗</span>
+                  <span>Initializing payment...</span>
+                </li>
+              )}
+              {!cardComplete && (
+                <li className="flex items-center">
+                  <span className="text-red-500 mr-2">✗</span>
+                  <span>Enter complete card information (number, expiry, CVC, ZIP)</span>
+                </li>
+              )}
+              {cardError && (
+                <li className="flex items-center">
+                  <span className="text-red-500 mr-2">✗</span>
+                  <span className="text-red-600">{cardError}</span>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
       </div>
     </form>
   );

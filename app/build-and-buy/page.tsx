@@ -6,9 +6,16 @@ import { useState, useEffect } from "react";
 import StripePaymentForm from "../components/StripePaymentForm";
 import PlaquePreview from "../components/PlaquePreview";
 import LivePlaquePreview from "../components/LivePlaquePreview";
+import LivePlaquePreviewWithEmail from "../components/LivePlaquePreviewWithEmail";
 import PreviewGenerator from "../components/PreviewGenerator";
 import PlayerSearch from "../components/PlayerSearch";
 import { Navigation } from "../components/ui/Navigation";
+import EmailPreviewModal from "../components/EmailPreviewModal";
+import EmailCapturePopup from "../components/EmailCapturePopup";
+import SessionRecovery from "../components/SessionRecovery";
+import { sessionManager, type BuildSession } from "@/app/lib/session-manager";
+import { autoEmailService } from "@/app/lib/auto-email-service";
+import { cardInventory, getCardsByPlayer } from "@/app/data/card-inventory";
 
 // Type definitions
 interface CardOption {
@@ -41,6 +48,21 @@ export default function BuildAndBuy() {
     price: number;
     pricePerSlot: number;
   } | null>(null);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+
+  // Helper function to get saved preview for a specific plaque configuration
+  const getSavedPreviewForPlaque = (plaqueType: string, plaqueStyle: string) => {
+    try {
+      const savedPreviews = JSON.parse(localStorage.getItem('savedPreviews') || '[]');
+      return savedPreviews.find((preview: any) => 
+        preview.plaqueType === plaqueType && 
+        preview.plaqueStyle === plaqueStyle
+      );
+    } catch (error) {
+      console.error('Error loading saved preview:', error);
+      return null;
+    }
+  };
 
   // Get default positions based on sport
   const getDefaultPositions = (sport: 'NFL' | 'MLB' | 'NBA' | 'NHL') => {
@@ -121,6 +143,11 @@ export default function BuildAndBuy() {
   // Pre-order state
   const [isPreOrder, setIsPreOrder] = useState<boolean>(true); // Default to pre-order mode
   const [preOrderDiscount] = useState<number>(0.15); // 15% pre-order discount
+  
+  // Promo code state
+  const [promoCode, setPromoCode] = useState<string>('');
+  const [promoApplied, setPromoApplied] = useState<boolean>(false);
+  const [promoError, setPromoError] = useState<string>('');
 
   // Shipping and subscription state
   const [selectedShipping, setSelectedShipping] = useState<'standard' | 'express' | 'priority'>('standard');
@@ -159,26 +186,79 @@ export default function BuildAndBuy() {
     setRosterPositions(getDefaultPositions(selectedSport));
   }, [selectedSport]);
 
+  // Session management - auto-save
+  useEffect(() => {
+    // Don't save if we're in the done step
+    if (currentStep === 'done') return;
+
+    sessionManager.saveSession({
+      teamName,
+      selectedSport,
+      currentStep,
+      selectedPlaque: selectedPlaque as any,
+      rosterPositions,
+      selectedCards,
+    });
+  }, [teamName, selectedSport, currentStep, selectedPlaque, rosterPositions, selectedCards]);
+
+  // Auto-email preview updates
+  useEffect(() => {
+    // Check if user opted in to email updates
+    const wantsUpdates = localStorage.getItem('rosterframe_email_updates') === 'true';
+    if (!wantsUpdates || !selectedPlaque) return;
+
+    // Get current preview image
+    const previewImage = document.querySelector('.live-plaque-preview img') as HTMLImageElement;
+    const previewUrl = previewImage?.src || getSavedPreviewForPlaque(getPlaqueType(), selectedPlaque.style)?.imageUrl || selectedPlaque.image;
+
+    // Send update based on significant changes
+    const playerCount = rosterPositions.filter(p => p.playerName).length;
+    
+    autoEmailService.sendPreviewUpdate({
+      teamName: teamName || 'Your Team',
+      plaqueType: getPlaqueType(),
+      plaqueStyle: selectedPlaque.style,
+      previewUrl: previewUrl.startsWith('http') ? previewUrl : `${window.location.origin}${previewUrl}`,
+      playerCount,
+      step: currentStep
+    });
+  }, [currentStep, rosterPositions, selectedCards]);
+
+  // Handle session recovery
+  const handleSessionRestore = (session: BuildSession) => {
+    setTeamName(session.teamName || '');
+    setSelectedSport(session.selectedSport || 'NFL');
+    setCurrentStep(session.currentStep as any || 'setup');
+    if (session.selectedPlaque) {
+      setSelectedPlaque(session.selectedPlaque as any);
+    }
+    setRosterPositions(session.rosterPositions || getDefaultPositions(session.selectedSport || 'NFL'));
+    setSelectedCards(session.selectedCards || {});
+  };
+
   // Generate card options for a player
   const generateCardOptions = (playerName: string): CardOption[] => {
     if (!playerName.trim()) return [];
     
-    return [
-      // Default recommended card
-      {
-        id: `${playerName}-default`,
-        playerName,
-        name: playerName,
-        year: 2023,
-        brand: 'Panini Prizm',
-        series: 'Base',
-        condition: 'Near Mint',
-        price: 15.99,
-        rarity: 'common',
-        imageUrl: '',
-        seller: 'RosterFrame',
-        shipping: 0 // Free shipping included
-      },
+    // Check if we have real cards for this player
+    const inventoryCards = getCardsByPlayer(playerName);
+    const realCards = inventoryCards.map(card => ({
+      id: card.id,
+      playerName: card.playerName,
+      name: card.playerName,
+      year: card.year,
+      brand: card.brand,
+      series: card.series,
+      condition: card.condition,
+      price: card.price,
+      rarity: card.rarity,
+      imageUrl: card.imageUrl,
+      seller: 'RosterFrame',
+      shipping: 0,
+      listingUrl: card.imageUrl
+    }));
+    
+    const defaultOptions = [
       // I have my own card option
       {
         id: `${playerName}-own-card`,
@@ -224,8 +304,26 @@ export default function BuildAndBuy() {
         imageUrl: '',
         seller: 'CardsForAll',
         shipping: 1.99
+      },
+      // Default generic card if no inventory match
+      {
+        id: `${playerName}-generic`,
+        playerName,
+        name: playerName,
+        year: 2023,
+        brand: 'Panini',
+        series: 'Base',
+        condition: 'Near Mint',
+        price: 15.99,
+        rarity: 'common',
+        imageUrl: '',
+        seller: 'RosterFrame',
+        shipping: 0
       }
     ];
+    
+    // Put real cards first, then default options
+    return [...realCards, ...defaultOptions];
   };
 
   const addPosition = () => {
@@ -286,6 +384,11 @@ export default function BuildAndBuy() {
   };
 
   const calculateTotalPrice = () => {
+    // If promo code is applied, return $1.00
+    if (promoApplied) {
+      return 1.00;
+    }
+    
     const plaquePrice = selectedPlaque?.price || 78.00;
     const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
     let subtotal = plaquePrice + cardsPrice;
@@ -305,16 +408,43 @@ export default function BuildAndBuy() {
   };
 
   const calculateSavings = () => {
+    if (promoApplied) {
+      // If promo is applied, show the full savings
+      const plaquePrice = selectedPlaque?.price || 78.00;
+      const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
+      const shippingCost = shippingOptions[selectedShipping].price;
+      const subscriptionCost = subscribeToPortfolio ? 4.99 : 0;
+      const originalTotal = plaquePrice + cardsPrice + shippingCost + subscriptionCost;
+      return originalTotal - 1.00;
+    }
     if (!isPreOrder) return 0;
     const plaquePrice = selectedPlaque?.price || 78.00;
     const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
     const subtotal = plaquePrice + cardsPrice;
     return subtotal * preOrderDiscount;
   };
+  
+  const applyPromoCode = () => {
+    setPromoError('');
+    const validCodes = ['ROSTERTEST', 'TEST1', 'HEDGE', 'BANKROLL'];
+    const upperCode = promoCode.toUpperCase();
+    
+    if (validCodes.includes(upperCode)) {
+      setPromoApplied(true);
+      setPromoError('');
+    } else {
+      setPromoError('Invalid promo code');
+      setPromoApplied(false);
+    }
+  };
 
   // Determine plaque type based on number of positions
   const getPlaqueType = () => {
-    return rosterPositions.length <= 8 ? '8' : '10';
+    // For now, we only have 8 and 10 spot plaques
+    // 9 positions (NFL) will use the 10-spot plaque
+    if (rosterPositions.length <= 8) return '8';
+    if (rosterPositions.length === 9) return '10'; // NFL uses 10-spot plaque with 9 filled
+    return '10';
   };
 
   // Plaque options - dynamically adjust based on roster size
@@ -323,13 +453,13 @@ export default function BuildAndBuy() {
       id: 'dark-maple-wood',
       name: 'Dark Maple Wood Plaque',
       material: 'Premium dark maple wood finish',
-      description: `Premium dark maple wood finish with ${getPlaqueType()} card slots`,
+      description: `Premium dark maple wood finish with ${rosterPositions.length} card slots`,
       price: getPlaqueType() === '8' ? 129.99 : 149.99,
       pricePerSlot: getPlaqueType() === '8' ? 16.25 : 15.00,
       gradient: 'from-amber-50 to-amber-100',
       border: 'border-amber-200',
       accent: 'text-amber-800',
-      image: '/images/DarkMapleWood1.png',
+      image: getSavedPreviewForPlaque(getPlaqueType(), 'dark-maple-wood')?.imageUrl || '/images/DarkMapleWood1.png',
       plaqueType: getPlaqueType() as '8' | '10',
       style: 'dark-maple-wood'
     },
@@ -337,13 +467,13 @@ export default function BuildAndBuy() {
       id: 'clear',
       name: 'Clear Plaque',
       material: 'Crystal clear acrylic',
-      description: `Crystal clear acrylic with ${getPlaqueType()} card slots - shows front or back`,
+      description: `Crystal clear acrylic with ${rosterPositions.length} card slots - shows front or back`,
       price: getPlaqueType() === '8' ? 149.99 : 169.99,
       pricePerSlot: getPlaqueType() === '8' ? 18.75 : 17.00,
       gradient: 'from-blue-50 to-indigo-50',
       border: 'border-blue-200',
       accent: 'text-blue-800',
-      image: '/images/ClearPlaque8.png',
+      image: getSavedPreviewForPlaque(getPlaqueType(), 'clear-plaque')?.imageUrl || '/images/ClearPlaque8.png',
       plaqueType: getPlaqueType() as '8' | '10',
       style: 'clear-plaque',
       hasBackOption: true
@@ -352,13 +482,13 @@ export default function BuildAndBuy() {
       id: 'black-marble',
       name: 'Black Marble Plaque',
       material: 'Elegant black marble finish',
-      description: `Elegant black marble finish with ${getPlaqueType()} card slots`,
+      description: `Elegant black marble finish with ${rosterPositions.length} card slots`,
       price: getPlaqueType() === '8' ? 159.99 : 179.99,
       pricePerSlot: getPlaqueType() === '8' ? 20.00 : 18.00,
       gradient: 'from-gray-800 to-black',
       border: 'border-gray-400',
       accent: 'text-gray-100',
-      image: '/images/BlackMarble8.png',
+      image: getSavedPreviewForPlaque(getPlaqueType(), 'black-marble')?.imageUrl || '/images/BlackMarble8.png',
       plaqueType: getPlaqueType() as '8' | '10',
       style: 'black-marble'
     }
@@ -389,9 +519,50 @@ export default function BuildAndBuy() {
     return rosterPositions.every(pos => selectedCards[pos.id]);
   };
 
-  const handlePaymentSuccess = (paymentId: string) => {
+  const handlePaymentSuccess = async (paymentId: string) => {
     setPaymentIntentId(paymentId);
     setPaymentStatus('success');
+    
+    // Track promo code usage if applied
+    if (promoApplied && promoCode) {
+      try {
+        const orderId = `RF-${Date.now().toString().slice(-6)}`;
+        const originalPrice = selectedPlaque?.price || 0;
+        const cardsPrice = Object.values(selectedCards).reduce((total, card) => total + card.price + (card.shipping || 0), 0);
+        const originalTotal = originalPrice + cardsPrice + shippingOptions[selectedShipping].price + (subscribeToPortfolio ? 4.99 : 0);
+        
+        await fetch('/api/promo-codes/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            promoCode: promoCode.toUpperCase(),
+            orderId,
+            paymentIntentId: paymentId,
+            teamName,
+            customerEmail: localStorage.getItem('rosterframe_user_email') || null,
+            originalAmount: originalTotal,
+            discountedAmount: 1.00,
+            savingsAmount: originalTotal - 1.00,
+            plaqueType: getPlaqueType(),
+            plaqueStyle: selectedPlaque?.style || 'unknown',
+            numPositions: rosterPositions.length,
+            numCards: Object.keys(selectedCards).length,
+            isGift,
+            sessionId: sessionManager.getSessionId(),
+            metadata: {
+              sport: selectedSport,
+              isPreOrder,
+              shipping: selectedShipping,
+              hasSubscription: subscribeToPortfolio
+            }
+          })
+        });
+      } catch (error) {
+        console.error('Failed to track promo code usage:', error);
+        // Don't block the order completion
+      }
+    }
+    
     setCurrentStep('done');
   };
 
@@ -401,7 +572,14 @@ export default function BuildAndBuy() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50">
+    <>
+      {/* Session Recovery Modal */}
+      <SessionRecovery 
+        onRestore={handleSessionRestore}
+        onDismiss={() => sessionManager.clearSession()}
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50">
       {/* Navigation */}
       <Navigation 
         logo="Roster Frame"
@@ -478,12 +656,13 @@ export default function BuildAndBuy() {
         {/* Live Plaque Preview - Shows after cards are selected in card selection and purchase steps */}
         {Object.keys(selectedCards).length > 0 && (currentStep === 'cards' || currentStep === 'purchase') && (
           <div className="mb-8 animate-in slide-in-from-top duration-500">
-            <LivePlaquePreview
+            <LivePlaquePreviewWithEmail
               teamName={teamName}
               plaqueStyle={selectedPlaque?.style || 'dark-maple-wood'}
               selectedCards={selectedCards}
               rosterPositions={rosterPositions}
               plaqueType={getPlaqueType()}
+              totalPositions={rosterPositions.length}
             />
           </div>
         )}
@@ -626,7 +805,15 @@ export default function BuildAndBuy() {
                 
                 {selectedPlaque && (
                   <button
-                    onClick={() => setCurrentStep('building')}
+                    onClick={() => {
+                      // Check if we should show email capture
+                      const hasSeenEmailPrompt = localStorage.getItem('rosterframe_email_updates');
+                      if (!hasSeenEmailPrompt) {
+                        setShowEmailCapture(true);
+                      } else {
+                        setCurrentStep('building');
+                      }
+                    }}
                     disabled={!teamName.trim()}
                     className={`w-full py-5 text-xl font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg ${
                       teamName.trim()
@@ -655,12 +842,13 @@ export default function BuildAndBuy() {
               {/* Live Plaque Preview */}
               {selectedPlaque && (
                 <div className="mb-8">
-                  <LivePlaquePreview
+                  <LivePlaquePreviewWithEmail
                     teamName={teamName}
                     plaqueStyle={selectedPlaque?.style || 'dark-maple-wood'}
                     selectedCards={selectedCards}
                     rosterPositions={rosterPositions}
                     plaqueType={getPlaqueType()}
+                    totalPositions={rosterPositions.length}
                   />
                 </div>
               )}
@@ -708,31 +896,61 @@ export default function BuildAndBuy() {
                           ))}
                         </select>
                       </div>
-                      <PlayerSearch
-                        value={position.playerName}
-                        onChange={(playerName, card) => {
-                          updatePosition(position.id, 'playerName', playerName);
-                          // Auto-select a default card when player is selected
-                          if (playerName && !selectedCards[position.id]) {
-                            const defaultCard: CardOption = {
-                              id: `${position.id}-default`,
-                              playerName: playerName,
-                              name: playerName,
-                              year: 2023,
-                              brand: 'Panini',
-                              series: 'Base',
-                              condition: 'Near Mint',
-                              price: 15.99,
-                              rarity: 'common',
-                              imageUrl: '',
-                              shipping: 3.99
-                            };
-                            selectCard(position.id, defaultCard);
-                          }
-                        }}
-                        placeholder={`Type ${selectedSport} player name...`}
-                        className="text-amber-800 font-medium"
-                      />
+                      {position.position === 'Defense/ST' ? (
+                        <input
+                          type="text"
+                          value={position.playerName}
+                          onChange={(e) => {
+                            const teamName = e.target.value;
+                            updatePosition(position.id, 'playerName', teamName);
+                            // Auto-select a default card when team is selected
+                            if (teamName && !selectedCards[position.id]) {
+                              const defaultCard: CardOption = {
+                                id: `${position.id}-default`,
+                                playerName: teamName,
+                                name: `${teamName} Defense`,
+                                year: 2023,
+                                brand: 'Panini',
+                                series: 'Team Defense',
+                                condition: 'Near Mint',
+                                price: 15.99,
+                                rarity: 'common',
+                                imageUrl: '',
+                                shipping: 3.99
+                              };
+                              selectCard(position.id, defaultCard);
+                            }
+                          }}
+                          placeholder="Type NFL team name (e.g., Steelers)..."
+                          className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-amber-800 font-medium"
+                        />
+                      ) : (
+                        <PlayerSearch
+                          value={position.playerName}
+                          onChange={(playerName, card) => {
+                            updatePosition(position.id, 'playerName', playerName);
+                            // Auto-select a default card when player is selected
+                            if (playerName && !selectedCards[position.id]) {
+                              const defaultCard: CardOption = {
+                                id: `${position.id}-default`,
+                                playerName: playerName,
+                                name: playerName,
+                                year: 2023,
+                                brand: 'Panini',
+                                series: 'Base',
+                                condition: 'Near Mint',
+                                price: 15.99,
+                                rarity: 'common',
+                                imageUrl: '',
+                                shipping: 3.99
+                              };
+                              selectCard(position.id, defaultCard);
+                            }
+                          }}
+                          placeholder={`Type ${selectedSport} player name...`}
+                          className="text-amber-800 font-medium"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -809,7 +1027,15 @@ export default function BuildAndBuy() {
 
               <div className="space-y-6">
                 {rosterPositions.filter(pos => pos.playerName.trim()).map((position) => {
-                  const cardOptions = generateCardOptions(position.playerName);
+                  const isDefense = position.position === 'Defense/ST';
+                  const cardOptions = isDefense 
+                    ? generateCardOptions(position.playerName).map(card => ({
+                        ...card,
+                        name: `${position.playerName} Defense`,
+                        brand: card.brand === 'Panini Prizm' ? 'Panini' : card.brand,
+                        series: card.series === 'Base' ? 'Team Defense' : card.series,
+                      }))
+                    : generateCardOptions(position.playerName);
                   const selectedCard = selectedCards[position.id];
                   const isCollapsed = collapsedSections[position.id];
                   
@@ -885,36 +1111,44 @@ export default function BuildAndBuy() {
                                     }`}
                                   >
                                     {/* Card Visual */}
-                                    <div className={`rounded-lg aspect-[3/4] mb-3 flex items-center justify-center border ${
+                                    <div className={`rounded-lg aspect-[3/4] mb-3 flex items-center justify-center border overflow-hidden ${
                                       card.series === 'I have my own' 
                                         ? 'bg-gradient-to-br from-green-100 to-emerald-100 border-green-300'
                                         : card.series === 'Browse eBay'
                                         ? 'bg-gradient-to-br from-blue-100 to-indigo-100 border-blue-300'
                                         : 'bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-200'
                                     }`}>
-                                      <div className="text-center p-2">
-                                        {card.series === 'I have my own' ? (
-                                          <>
-                                            <div className="text-3xl mb-2">🃏</div>
-                                            <div className="text-sm font-bold text-green-800">I Have</div>
-                                            <div className="text-sm font-bold text-green-800">My Own</div>
-                                            <div className="text-xs text-green-600 mt-1">FREE</div>
-                                          </>
-                                        ) : card.series === 'Browse eBay' ? (
-                                          <>
-                                            <div className="text-3xl mb-2">🔍</div>
-                                            <div className="text-sm font-bold text-blue-800">Search</div>
-                                            <div className="text-sm font-bold text-blue-800">eBay</div>
-                                            <div className="text-xs text-blue-600 mt-1">Browse Options</div>
-                                          </>
-                                        ) : (
-                                          <>
-                                            <div className="text-xs font-bold text-amber-800 mb-1">{card.year}</div>
-                                            <div className="text-sm font-bold text-amber-900 leading-tight">{card.playerName}</div>
-                                            <div className="text-xs text-amber-600 mt-1">{card.brand}</div>
-                                          </>
-                                        )}
-                                      </div>
+                                      {card.imageUrl && !card.imageUrl.startsWith('#') ? (
+                                        <img 
+                                          src={card.imageUrl} 
+                                          alt={`${card.playerName} ${card.year} ${card.brand}`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="text-center p-2">
+                                          {card.series === 'I have my own' ? (
+                                            <>
+                                              <div className="text-3xl mb-2">🃏</div>
+                                              <div className="text-sm font-bold text-green-800">I Have</div>
+                                              <div className="text-sm font-bold text-green-800">My Own</div>
+                                              <div className="text-xs text-green-600 mt-1">FREE</div>
+                                            </>
+                                          ) : card.series === 'Browse eBay' ? (
+                                            <>
+                                              <div className="text-3xl mb-2">🔍</div>
+                                              <div className="text-sm font-bold text-blue-800">Search</div>
+                                              <div className="text-sm font-bold text-blue-800">eBay</div>
+                                              <div className="text-xs text-blue-600 mt-1">Browse Options</div>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <div className="text-xs font-bold text-amber-800 mb-1">{card.year}</div>
+                                              <div className="text-sm font-bold text-amber-900 leading-tight">{card.playerName}</div>
+                                              <div className="text-xs text-amber-600 mt-1">{card.brand}</div>
+                                            </>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                     
                                     {/* Card Details */}
@@ -1158,6 +1392,51 @@ export default function BuildAndBuy() {
                     </div>
                   </div>
                 </div>
+                
+                {/* Promo Code Section */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                  <h3 className="text-xl font-bold text-purple-900 mb-4">Have a Promo Code?</h3>
+                  <div className="flex space-x-3">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && applyPromoCode()}
+                      placeholder="Enter promo code"
+                      className="flex-1 px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      disabled={promoApplied}
+                    />
+                    <button
+                      onClick={applyPromoCode}
+                      disabled={promoApplied || !promoCode.trim()}
+                      className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                        promoApplied 
+                          ? 'bg-green-500 text-white cursor-not-allowed'
+                          : promoCode.trim()
+                          ? 'bg-purple-600 text-white hover:bg-purple-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {promoApplied ? '✓ Applied' : 'Apply'}
+                    </button>
+                  </div>
+                  {promoError && (
+                    <p className="text-red-600 text-sm mt-2">{promoError}</p>
+                  )}
+                  {promoApplied && (
+                    <div className="mt-3 p-3 bg-green-100 rounded-lg border border-green-300">
+                      <p className="text-green-800 font-semibold">
+                        🎉 Promo code applied! Your total is now $1.00
+                      </p>
+                      <p className="text-green-600 text-sm mt-1">
+                        You're saving ${(calculateSavings()).toFixed(2)}!
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-xs text-purple-600 mt-2">
+                    Valid codes: ROSTERTEST, TEST1, HEDGE, BANKROLL
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -1217,14 +1496,20 @@ export default function BuildAndBuy() {
                             <span>$4.99</span>
                           </div>
                         )}
+                        {promoApplied && (
+                          <div className="flex justify-between items-center text-sm text-green-600 font-bold">
+                            <span>Promo Code ({promoCode}):</span>
+                            <span>-${(calculateSavings()).toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center text-lg pt-2 border-t">
                           <span className="font-bold">Total Amount:</span>
                           <span className="font-bold text-green-600">${calculateTotalPrice().toFixed(2)}</span>
                         </div>
-                        {isPreOrder && (
+                        {(isPreOrder || promoApplied) && (
                           <div className="text-center pt-2">
                             <span className="text-sm text-blue-600 font-medium">
-                              💰 You are saving ${calculateSavings().toFixed(2)} with pre-order!
+                              💰 You are saving ${calculateSavings().toFixed(2)} {promoApplied ? 'with promo code' : 'with pre-order'}!
                             </span>
                           </div>
                         )}
@@ -1306,6 +1591,7 @@ export default function BuildAndBuy() {
                       numCards: Object.keys(selectedCards).length,
                       isPreOrder,
                       savings: calculateSavings(),
+                      promoCode: promoApplied ? promoCode : undefined,
                     }}
                   />
                 </div>
@@ -1412,5 +1698,41 @@ export default function BuildAndBuy() {
         </div>
       </main>
     </div>
+    
+    {/* Email Capture Popup */}
+    <EmailCapturePopup
+      isOpen={showEmailCapture}
+      onClose={() => setShowEmailCapture(false)}
+      onContinue={(email) => {
+        setShowEmailCapture(false);
+        setCurrentStep('building');
+        
+        // If email provided, send initial preview
+        if (email && selectedPlaque) {
+          // Send welcome email with plaque selection
+          fetch('/api/email-preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipientEmail: email,
+              recipientName: 'Plaque Builder',
+              teamName: teamName || 'Your Team',
+              previewUrl: getSavedPreviewForPlaque(getPlaqueType(), selectedPlaque.style)?.imageUrl || selectedPlaque.image,
+              plaqueType: getPlaqueType(),
+              plaqueStyle: selectedPlaque.style,
+              message: `Great choice! You've selected a ${selectedPlaque.name} for ${teamName}. We'll send you updated previews as you build your roster.`,
+              senderName: 'RosterFrame'
+            }),
+          });
+        }
+      }}
+      teamName={teamName}
+      plaqueInfo={{
+        style: selectedPlaque?.name || '',
+        type: getPlaqueType(),
+        price: selectedPlaque?.price || 0
+      }}
+    />
+    </>
   );
 } 

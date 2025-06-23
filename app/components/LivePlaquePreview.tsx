@@ -31,6 +31,7 @@ interface LivePlaquePreviewProps {
   selectedCards: Record<string, CardOption>;
   rosterPositions: RosterPosition[];
   plaqueType: '8' | '10';
+  totalPositions?: number; // Optional override for actual positions
 }
 
 export default function LivePlaquePreview({
@@ -38,10 +39,25 @@ export default function LivePlaquePreview({
   plaqueStyle,
   selectedCards,
   rosterPositions,
-  plaqueType
+  plaqueType,
+  totalPositions
 }: LivePlaquePreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  // Helper function to get saved preview for a specific plaque configuration
+  const getSavedPreviewForPlaque = (plaqueType: string, plaqueStyle: string) => {
+    try {
+      const savedPreviews = JSON.parse(localStorage.getItem('savedPreviews') || '[]');
+      return savedPreviews.find((preview: any) => 
+        preview.plaqueType === plaqueType && 
+        preview.plaqueStyle === plaqueStyle
+      );
+    } catch (error) {
+      console.error('Error loading saved preview:', error);
+      return null;
+    }
+  };
 
   // Get the plaque background based on style
   const getPlaqueBackground = () => {
@@ -56,13 +72,19 @@ export default function LivePlaquePreview({
     return '/images/DarkMapleWood1.png'; // Default
   };
 
-  // Generate preview whenever cards change
+  // Check for saved preview on mount and generate preview whenever cards change
   useEffect(() => {
+    // First check if there's a saved preview
+    const savedPreview = getSavedPreviewForPlaque(plaqueType, plaqueStyle);
+    if (savedPreview && Object.keys(selectedCards).length === 0) {
+      // Use saved preview if no cards are selected yet
+      setPreviewImage(savedPreview.imageUrl);
+      return;
+    }
+
     const generateLivePreview = async () => {
       const selectedCardsList = Object.values(selectedCards);
       // Always generate preview, even with empty plaque
-      setIsGenerating(true);
-
       setIsGenerating(true);
       try {
         // Convert to the format expected by the preview API
@@ -127,7 +149,8 @@ export default function LivePlaquePreview({
   }, [selectedCards, teamName, plaqueStyle, plaqueType, rosterPositions]);
 
   const selectedCount = Object.keys(selectedCards).length;
-  const totalSlots = parseInt(plaqueType);
+  // Use actual roster positions count if provided, otherwise use plaque type
+  const totalSlots = totalPositions || rosterPositions.length || parseInt(plaqueType);
   const completionPercentage = (selectedCount / totalSlots) * 100;
 
   return (
@@ -166,7 +189,7 @@ export default function LivePlaquePreview({
           </div>
         )}
 
-        <div className="text-center">
+        <div className="text-center live-plaque-preview">
           {previewImage ? (
             <>
               <img
@@ -182,10 +205,10 @@ export default function LivePlaquePreview({
             </>
           ) : (
             <>
-              {/* Show empty plaque background */}
+              {/* Show saved preview or empty plaque background */}
               <div className="relative">
                 <img
-                  src={getPlaqueBackground()}
+                  src={getSavedPreviewForPlaque(plaqueType, plaqueStyle)?.imageUrl || getPlaqueBackground()}
                   alt="Empty plaque"
                   className="max-w-full h-auto rounded-lg shadow-md mx-auto opacity-90"
                   style={{ maxHeight: '400px' }}
