@@ -672,9 +672,30 @@ export default function BuildAndBuy() {
                 </p>
                 {/* Email Button */}
                 <button
-                  onClick={() => {
-                    // For now, show a message that email feature is being updated
-                    alert('Email preview feature is being updated. Your preview is displayed above.');
+                  onClick={async () => {
+                    const email = prompt('Enter email address to send preview to:');
+                    if (!email) return;
+                    
+                    try {
+                      const response = await fetch('/api/email-preview/simple', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          email,
+                          teamName,
+                          message: `Preview for ${teamName} plaque with ${Object.keys(selectedCards).length} cards selected.`
+                        })
+                      });
+                      
+                      const data = await response.json();
+                      if (data.success) {
+                        alert('Preview email sent successfully!');
+                      } else {
+                        alert('Failed to send email: ' + (data.error || 'Unknown error'));
+                      }
+                    } catch (error) {
+                      alert('Failed to send email. Please try again.');
+                    }
                   }}
                   className="bg-green-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-2"
                 >
