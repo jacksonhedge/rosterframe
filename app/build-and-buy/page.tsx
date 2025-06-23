@@ -5,12 +5,9 @@ import Image from "next/image";
 import { useState, useEffect, useMemo } from "react";
 import StripePaymentForm from "../components/StripePaymentForm";
 import PlaquePreview from "../components/PlaquePreview";
-import LivePlaquePreview from "../components/LivePlaquePreview";
-import LivePlaquePreviewWithEmail from "../components/LivePlaquePreviewWithEmail";
 import PreviewGenerator from "../components/PreviewGenerator";
 import PlayerSearch from "../components/PlayerSearch";
 import { Navigation } from "../components/ui/Navigation";
-import EmailPreviewModal from "../components/EmailPreviewModal";
 import EmailCapturePopup from "../components/EmailCapturePopup";
 import SessionRecovery from "../components/SessionRecovery";
 import PlaquePreviewWithText from "../components/PlaquePreviewWithText";
@@ -659,16 +656,35 @@ export default function BuildAndBuy() {
       {/* Main Content - Extra padding to account for sticky progress bar */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Live Plaque Preview - Shows after cards are selected in card selection and purchase steps */}
-        {Object.keys(selectedCards).length > 0 && (currentStep === 'cards' || currentStep === 'purchase') && (
+        {Object.keys(selectedCards).length > 0 && (currentStep === 'cards' || currentStep === 'purchase') && selectedPlaque && (
           <div className="mb-8 animate-in slide-in-from-top duration-500">
-            <LivePlaquePreviewWithEmail
-              teamName={teamName}
-              plaqueStyle={selectedPlaque?.style || 'dark-maple-wood'}
-              selectedCards={selectedCards}
-              rosterPositions={rosterPositions}
-              plaqueType={getPlaqueType()}
-              totalPositions={rosterPositions.length}
-            />
+            <div className="bg-white rounded-lg p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4 text-center">Your Plaque Preview</h3>
+              <PlaquePreviewWithText
+                plaqueImage={plaqueOptions.find(p => p.id === selectedPlaque.id)?.image || selectedPlaque.image}
+                plaqueStyle={selectedPlaque.style}
+                teamName={teamName}
+                className="w-full max-w-2xl mx-auto"
+              />
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-600 mb-2">
+                  {Object.keys(selectedCards).length} of {rosterPositions.length} cards selected
+                </p>
+                {/* Email Button */}
+                <button
+                  onClick={() => {
+                    // For now, show a message that email feature is being updated
+                    alert('Email preview feature is being updated. Your preview is displayed above.');
+                  }}
+                  className="bg-green-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Email Preview
+                </button>
+              </div>
+            </div>
           </div>
         )}
         <div className="grid grid-cols-1 gap-8">
@@ -847,15 +863,17 @@ export default function BuildAndBuy() {
               
               {/* Live Plaque Preview */}
               {selectedPlaque && (
-                <div className="mb-8">
-                  <LivePlaquePreviewWithEmail
+                <div className="mb-8 bg-white rounded-lg p-4">
+                  <h3 className="text-base font-semibold text-gray-700 mb-2 text-center">Preview</h3>
+                  <PlaquePreviewWithText
+                    plaqueImage={plaqueOptions.find(p => p.id === selectedPlaque.id)?.image || selectedPlaque.image}
+                    plaqueStyle={selectedPlaque.style}
                     teamName={teamName}
-                    plaqueStyle={selectedPlaque?.style || 'dark-maple-wood'}
-                    selectedCards={selectedCards}
-                    rosterPositions={rosterPositions}
-                    plaqueType={getPlaqueType()}
-                    totalPositions={rosterPositions.length}
+                    className="w-full max-w-md mx-auto"
                   />
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Selected cards: {Object.keys(selectedCards).length} of {rosterPositions.length}
+                  </p>
                 </div>
               )}
               
