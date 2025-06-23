@@ -157,7 +157,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-[var(--surface-2)]">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-[var(--text-secondary)] text-sm">
-              © {new Date().getFullYear()} Roster Frame. All rights reserved.
+              © {new Date().getFullYear()} Roster Frame. All rights reserved. <span className="text-xs opacity-50">v3.23</span>
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
               <Link
