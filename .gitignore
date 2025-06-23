@@ -47,3 +47,4 @@ public/images/cards/temp/
 
 # test files
 test-*.js
+vercel-env-import.env

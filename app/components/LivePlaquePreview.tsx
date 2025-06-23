@@ -43,7 +43,7 @@ export default function LivePlaquePreview({
   totalPositions
 }: LivePlaquePreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Helper function to get saved preview for a specific plaque configuration
   const getSavedPreviewForPlaque = (plaqueType: string, plaqueStyle: string) => {
@@ -78,7 +78,7 @@ export default function LivePlaquePreview({
     const savedPreview = getSavedPreviewForPlaque(plaqueType, plaqueStyle);
     if (savedPreview && Object.keys(selectedCards).length === 0) {
       // Use saved preview if no cards are selected yet
-      setPreviewImage(savedPreview.imageUrl);
+      setPreviewUrl(savedPreview.htmlUrl || savedPreview.imageUrl);
       return;
     }
 
@@ -134,7 +134,7 @@ export default function LivePlaquePreview({
 
         if (response.ok) {
           const result = await response.json();
-          setPreviewImage(result.imageUrl);
+          setPreviewUrl(result.htmlUrl || result.imageUrl);
         }
       } catch (error) {
         console.error('Error generating live preview:', error);
@@ -190,14 +190,23 @@ export default function LivePlaquePreview({
         )}
 
         <div className="text-center live-plaque-preview">
-          {previewImage ? (
+          {previewUrl ? (
             <>
-              <img
-                src={previewImage}
-                alt="Live plaque preview"
-                className="max-w-full h-auto rounded-lg shadow-md mx-auto"
-                style={{ maxHeight: '400px' }}
-              />
+              {previewUrl.endsWith('.html') ? (
+                <iframe
+                  src={previewUrl}
+                  title="Live plaque preview"
+                  className="w-full rounded-lg shadow-md mx-auto"
+                  style={{ height: '400px', border: 'none' }}
+                />
+              ) : (
+                <img
+                  src={previewUrl}
+                  alt="Live plaque preview"
+                  className="max-w-full h-auto rounded-lg shadow-md mx-auto"
+                  style={{ maxHeight: '400px' }}
+                />
+              )}
               <div className="mt-4 text-sm text-amber-600">
                 <p className="font-semibold">{teamName || 'Your Team'}</p>
                 <p>{plaqueStyle} • {selectedCount} players</p>
@@ -208,7 +217,9 @@ export default function LivePlaquePreview({
               {/* Show saved preview or empty plaque background */}
               <div className="relative">
                 <img
-                  src={getSavedPreviewForPlaque(plaqueType, plaqueStyle)?.imageUrl || getPlaqueBackground()}
+                  src={getSavedPreviewForPlaque(plaqueType, plaqueStyle)?.htmlUrl || 
+                       getSavedPreviewForPlaque(plaqueType, plaqueStyle)?.imageUrl || 
+                       getPlaqueBackground()}
                   alt="Empty plaque"
                   className="max-w-full h-auto rounded-lg shadow-md mx-auto opacity-90"
                   style={{ maxHeight: '400px' }}

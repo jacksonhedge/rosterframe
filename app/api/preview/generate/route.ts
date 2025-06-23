@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCanvas, loadImage, Canvas, Image } from 'canvas';
 import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -151,21 +150,21 @@ export async function POST(request: NextRequest) {
     // Generate unique preview ID
     const previewId = uuidv4();
     
-    // Create compiled image
-    const compiledImageBuffer = await generateCompiledImage(config);
+    // Generate HTML preview instead of canvas image
+    const htmlContent = await generateHTMLPreview(config);
     
-    // Save image to file system (in production, you'd use cloud storage)
+    // Save preview data to file system (in production, you'd use cloud storage)
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'previews');
     await fs.mkdir(uploadsDir, { recursive: true });
     
-    const filename = `${previewId}.png`;
+    const filename = `${previewId}.html`;
     const filepath = path.join(uploadsDir, filename);
-    await fs.writeFile(filepath, compiledImageBuffer);
+    await fs.writeFile(filepath, htmlContent);
     
     // Create response with preview data
     const preview = {
       previewId,
-      imageUrl: `/uploads/previews/${filename}`,
+      htmlUrl: `/uploads/previews/${filename}`,
       downloadUrl: `/api/preview/${previewId}/download`,
       createdAt: new Date().toISOString(),
       configuration: config,
@@ -180,362 +179,341 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error generating preview:', error);
     return NextResponse.json(
-      { error: 'Failed to generate preview image' },
+      { error: 'Failed to generate preview' },
       { status: 500 }
     );
   }
 }
 
-async function generateCompiledImage(config: PlaqueConfiguration): Promise<Buffer> {
+async function generateHTMLPreview(config: PlaqueConfiguration): Promise<string> {
   // Get positions for the selected plaque type
   const positions = CARD_POSITIONS[config.plaqueType];
-  const canvas = createCanvas(positions.imageWidth, positions.imageHeight);
-  const ctx = canvas.getContext('2d');
+  
+  // Get layout adjustments
+  const adjustments = config.layoutAdjustments || {};
+  const cardSizeAdjustment = adjustments.cardSizeAdjustment || 100;
+  const cardSpacingAdjustment = adjustments.cardSpacingAdjustment || 100;
+  const horizontalOffset = adjustments.horizontalOffset || 0;
+  const verticalOffset = adjustments.verticalOffset || 0;
 
-  try {
-    // Handle blank plaque (no background)
-    if (config.plaqueStyle === 'blank') {
-      // Fill with transparent background
-      ctx.clearRect(0, 0, positions.imageWidth, positions.imageHeight);
-    } else {
-      // Load and draw plaque background
-      let plaqueFileName = 'DarkMapleWood1.png';
-      if (config.plaqueStyle === 'clear-plaque') {
-        plaqueFileName = 'ClearPlaque8.png';
-      } else if (config.plaqueStyle === 'black-marble') {
-        plaqueFileName = 'BlackMarble8.png';
-      }
-      
-      const plaqueImagePath = path.join(
-        process.cwd(), 
-        'public', 
-        'images', 
-        plaqueFileName
-      );
-      
-      const plaqueImage = await loadImage(plaqueImagePath);
-      ctx.drawImage(plaqueImage, 0, 0, positions.imageWidth, positions.imageHeight);
+  // Determine background style
+  let backgroundStyle = '';
+  if (config.plaqueStyle === 'blank') {
+    backgroundStyle = 'background-color: #f5f5f5;';
+  } else {
+    let plaqueFileName = 'DarkMapleWood1.png';
+    if (config.plaqueStyle === 'clear-plaque') {
+      plaqueFileName = 'ClearPlaque8.png';
+    } else if (config.plaqueStyle === 'black-marble') {
+      plaqueFileName = 'BlackMarble8.png';
     }
-
-    // Get layout adjustments
-    const adjustments = config.layoutAdjustments || {};
-    const cardSizeAdjustment = adjustments.cardSizeAdjustment || 100;
-    const cardSpacingAdjustment = adjustments.cardSpacingAdjustment || 100;
-    const horizontalOffset = adjustments.horizontalOffset || 0;
-    const verticalOffset = adjustments.verticalOffset || 0;
-
-    // Draw each player card
-    for (let i = 0; i < config.playerCards.length && i < positions.positions.length; i++) {
-      const card = config.playerCards[i];
-      const position = positions.positions[i];
-      
-      // Calculate spacing adjustments based on position
-      let spacingX = 0;
-      let spacingY = 0;
-      
-      // Calculate spacing based on plaque type
-      if (config.plaqueType === '4') {
-        // Single row
-        spacingX = i * (cardSpacingAdjustment - 100) * 2.5;
-      } else if (config.plaqueType === '5') {
-        // 3-2 layout
-        if (i < 3) {
-          spacingX = i * (cardSpacingAdjustment - 100) * 2.5;
-        } else {
-          spacingX = (i - 3) * (cardSpacingAdjustment - 100) * 2.5 + (cardSpacingAdjustment - 100) * 1.25;
-          spacingY = (cardSpacingAdjustment - 100) * 3;
-        }
-      } else if (config.plaqueType === '6') {
-        // 3x2 grid
-        const row = Math.floor(i / 3);
-        const col = i % 3;
-        spacingX = col * (cardSpacingAdjustment - 100) * 2.5;
-        spacingY = row * (cardSpacingAdjustment - 100) * 3;
-      } else if (config.plaqueType === '7') {
-        // Pyramid: 3-3-1
-        if (i < 3) {
-          spacingX = i * (cardSpacingAdjustment - 100) * 2.2;
-        } else if (i < 6) {
-          spacingX = (i - 3) * (cardSpacingAdjustment - 100) * 2.2;
-          spacingY = (cardSpacingAdjustment - 100) * 2.5;
-        } else {
-          spacingX = (cardSpacingAdjustment - 100) * 2.2;
-          spacingY = (cardSpacingAdjustment - 100) * 5;
-        }
-      } else if (config.plaqueType === '8') {
-        // 4x2 grid
-        const row = Math.floor(i / 4);
-        const col = i % 4;
-        spacingX = col * (cardSpacingAdjustment - 100) * 2.3;
-        spacingY = row * (cardSpacingAdjustment - 100) * 3.8;
-      } else if (config.plaqueType === '9') {
-        // 3x3 grid
-        const row = Math.floor(i / 3);
-        const col = i % 3;
-        spacingX = col * (cardSpacingAdjustment - 100) * 2.1;
-        spacingY = row * (cardSpacingAdjustment - 100) * 2.4;
-      } else if (config.plaqueType === '10') {
-        // 5x2 grid
-        const row = Math.floor(i / 5);
-        const col = i % 5;
-        spacingX = col * (cardSpacingAdjustment - 100) * 1.8;
-        spacingY = row * (cardSpacingAdjustment - 100) * 2.5;
-      }
-      
-      // Apply all adjustments
-      const adjustedX = position.x + spacingX + horizontalOffset;
-      const adjustedY = position.y + spacingY + verticalOffset;
-      const adjustedWidth = position.width * (cardSizeAdjustment / 100);
-      const adjustedHeight = position.height * (cardSizeAdjustment / 100);
-      
-      try {
-        let cardImage: Image;
-        
-        // Check if we should show card backs
-        if (config.showCardBacks) {
-          // Generate card back design
-          const cardBackCanvas = await generateCardBack(card, adjustedWidth, adjustedHeight);
-          cardImage = await loadImage(cardBackCanvas.toDataURL());
-        } else if (card.imageUrl && card.imageUrl.trim() && 
-            (card.imageUrl.startsWith('http') || 
-             card.imageUrl.startsWith('data:image/') || 
-             card.imageUrl.startsWith('/uploads/') ||
-             card.imageUrl.startsWith('./uploads/'))) {
-          // Load external image, data URL (uploaded image), or local upload
-          try {
-            cardImage = await loadImage(card.imageUrl);
-          } catch (loadError) {
-            console.warn(`Failed to load image ${card.imageUrl}, using placeholder:`, loadError);
-            const placeholderCanvas = await generatePlaceholderCard(card, adjustedWidth, adjustedHeight);
-            cardImage = await loadImage(placeholderCanvas.toDataURL());
-          }
-        } else {
-          // Use placeholder or generate card image
-          const placeholderCanvas = await generatePlaceholderCard(card, adjustedWidth, adjustedHeight);
-          cardImage = await loadImage(placeholderCanvas.toDataURL());
-        }
-        
-        // Draw card with proper scaling and positioning
-        ctx.save();
-        
-        // Add subtle shadow behind the card
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-        
-        // Draw card with minimal padding to fit snugly within plaque slot
-        const cardPadding = 4;
-        ctx.drawImage(
-          cardImage,
-          adjustedX + cardPadding,
-          adjustedY + cardPadding,
-          adjustedWidth - (cardPadding * 2),
-          adjustedHeight - (cardPadding * 2)
-        );
-        
-        ctx.restore();
-        
-        // Add subtle card border (using adjusted positions)
-        ctx.strokeStyle = '#cccccc';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(
-          adjustedX + cardPadding,
-          adjustedY + cardPadding,
-          adjustedWidth - (cardPadding * 2),
-          adjustedHeight - (cardPadding * 2)
-        );
-        
-        // Add rarity indicator (adjusted for padding)
-        const adjustedPosition = {
-          x: adjustedX + cardPadding,
-          y: adjustedY + cardPadding,
-          width: adjustedWidth - (cardPadding * 2),
-          height: adjustedHeight - (cardPadding * 2)
-        };
-        addRarityIndicator(ctx, card.rarity, adjustedPosition);
-        
-      } catch (cardError) {
-        console.warn(`Failed to load card image for ${card.playerName}:`, cardError);
-        // Draw placeholder card
-        drawPlaceholderCard(ctx, card, position);
-      }
-    }
-
-    // Add team name overlay (skip for blank plaque)
-    if (config.plaqueStyle !== 'blank') {
-      addTeamNameOverlay(ctx, config.teamName, positions);
-    }
-
-    return canvas.toBuffer('image/png');
-
-  } catch (error) {
-    console.error('Error in image generation:', error);
-    throw error;
+    backgroundStyle = `background-image: url('/images/${plaqueFileName}'); background-size: cover; background-position: center;`;
   }
-}
 
-async function generatePlaceholderCard(card: PlayerCardData, width: number, height: number): Promise<Canvas> {
-  const cardCanvas = createCanvas(width, height);
-  const ctx = cardCanvas.getContext('2d');
-  
-  // Create gradient background
-  const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, '#f3f4f6');
-  gradient.addColorStop(1, '#e5e7eb');
-  
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-  
-  // Add border
-  ctx.strokeStyle = '#d1d5db';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(0, 0, width, height);
-  
-  // Add text
-  ctx.fillStyle = '#374151';
-  ctx.textAlign = 'center';
-  
-  // Player name
-  ctx.font = 'bold 24px Arial';
-  ctx.fillText(card.playerName, width / 2, height / 2 - 40);
-  
-  // Year and brand
-  ctx.font = '18px Arial';
-  ctx.fillText(`${card.year} ${card.brand}`, width / 2, height / 2);
-  
-  // Series
-  ctx.font = '14px Arial';
-  ctx.fillStyle = '#6b7280';
-  ctx.fillText(card.series, width / 2, height / 2 + 30);
-  
-  // Price
-  ctx.font = 'bold 20px Arial';
-  ctx.fillStyle = '#059669';
-  ctx.fillText(`$${card.price.toFixed(2)}`, width / 2, height / 2 + 60);
-  
-  return cardCanvas;
-}
+  // Generate card HTML
+  let cardsHTML = '';
+  for (let i = 0; i < config.playerCards.length && i < positions.positions.length; i++) {
+    const card = config.playerCards[i];
+    const position = positions.positions[i];
+    
+    // Calculate spacing adjustments based on position
+    let spacingX = 0;
+    let spacingY = 0;
+    
+    // Calculate spacing based on plaque type (same logic as before)
+    if (config.plaqueType === '4') {
+      spacingX = i * (cardSpacingAdjustment - 100) * 2.5;
+    } else if (config.plaqueType === '5') {
+      if (i < 3) {
+        spacingX = i * (cardSpacingAdjustment - 100) * 2.5;
+      } else {
+        spacingX = (i - 3) * (cardSpacingAdjustment - 100) * 2.5 + (cardSpacingAdjustment - 100) * 1.25;
+        spacingY = (cardSpacingAdjustment - 100) * 3;
+      }
+    } else if (config.plaqueType === '6') {
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      spacingX = col * (cardSpacingAdjustment - 100) * 2.5;
+      spacingY = row * (cardSpacingAdjustment - 100) * 3;
+    } else if (config.plaqueType === '7') {
+      if (i < 3) {
+        spacingX = i * (cardSpacingAdjustment - 100) * 2.2;
+      } else if (i < 6) {
+        spacingX = (i - 3) * (cardSpacingAdjustment - 100) * 2.2;
+        spacingY = (cardSpacingAdjustment - 100) * 2.5;
+      } else {
+        spacingX = (cardSpacingAdjustment - 100) * 2.2;
+        spacingY = (cardSpacingAdjustment - 100) * 5;
+      }
+    } else if (config.plaqueType === '8') {
+      const row = Math.floor(i / 4);
+      const col = i % 4;
+      spacingX = col * (cardSpacingAdjustment - 100) * 2.3;
+      spacingY = row * (cardSpacingAdjustment - 100) * 3.8;
+    } else if (config.plaqueType === '9') {
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      spacingX = col * (cardSpacingAdjustment - 100) * 2.1;
+      spacingY = row * (cardSpacingAdjustment - 100) * 2.4;
+    } else if (config.plaqueType === '10') {
+      const row = Math.floor(i / 5);
+      const col = i % 5;
+      spacingX = col * (cardSpacingAdjustment - 100) * 1.8;
+      spacingY = row * (cardSpacingAdjustment - 100) * 2.5;
+    }
+    
+    // Apply all adjustments
+    const adjustedX = position.x + spacingX + horizontalOffset;
+    const adjustedY = position.y + spacingY + verticalOffset;
+    const adjustedWidth = position.width * (cardSizeAdjustment / 100);
+    const adjustedHeight = position.height * (cardSizeAdjustment / 100);
+    
+    const cardPadding = 4;
+    
+    // Generate card content
+    let cardContent = '';
+    if (config.showCardBacks) {
+      // Card back design
+      cardContent = `
+        <div class="card-back">
+          <div class="card-back-border"></div>
+          <div class="card-back-logo">
+            <div>ROSTER</div>
+            <div>FRAME</div>
+          </div>
+          <div class="card-back-stats">
+            <div class="player-name">${card.playerName.toUpperCase()}</div>
+            <div class="stats-details">
+              <div>${card.year} ${card.brand}</div>
+              <div>${card.series}</div>
+              <div>Position: ${card.position}</div>
+            </div>
+            <div class="rarity-badge">${card.rarity.toUpperCase()}</div>
+          </div>
+        </div>
+      `;
+    } else if (card.imageUrl && card.imageUrl.trim()) {
+      // Card with image
+      cardContent = `
+        <img src="${card.imageUrl}" alt="${card.playerName}" style="width: 100%; height: 100%; object-fit: cover;">
+        <div class="rarity-indicator rarity-${card.rarity}"></div>
+      `;
+    } else {
+      // Placeholder card
+      cardContent = `
+        <div class="placeholder-card">
+          <div class="player-name">${card.playerName}</div>
+          <div class="card-info">${card.year} ${card.brand}</div>
+          <div class="card-series">${card.series}</div>
+          <div class="card-price">$${card.price.toFixed(2)}</div>
+        </div>
+        <div class="rarity-indicator rarity-${card.rarity}"></div>
+      `;
+    }
+    
+    cardsHTML += `
+      <div class="card" style="
+        position: absolute;
+        left: ${adjustedX + cardPadding}px;
+        top: ${adjustedY + cardPadding}px;
+        width: ${adjustedWidth - (cardPadding * 2)}px;
+        height: ${adjustedHeight - (cardPadding * 2)}px;
+        border: 1px solid #cccccc;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        background: white;
+      ">
+        ${cardContent}
+      </div>
+    `;
+  }
 
-async function generateCardBack(card: PlayerCardData, width: number, height: number): Promise<Canvas> {
-  const cardCanvas = createCanvas(width, height);
-  const ctx = cardCanvas.getContext('2d');
-  
-  // Background gradient
-  const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, '#1a1a2e');
-  gradient.addColorStop(1, '#16213e');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-  
-  // Border
-  ctx.strokeStyle = '#eab308';
-  ctx.lineWidth = Math.max(3, width * 0.02);
-  ctx.strokeRect(
-    ctx.lineWidth / 2, 
-    ctx.lineWidth / 2, 
-    width - ctx.lineWidth, 
-    height - ctx.lineWidth
-  );
-  
-  // Center logo/text
-  ctx.fillStyle = '#eab308';
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.max(16, width * 0.08)}px Arial`;
-  ctx.fillText('ROSTER', width / 2, height / 2 - height * 0.05);
-  ctx.fillText('FRAME', width / 2, height / 2 + height * 0.05);
-  
-  // Stats area
-  const statsHeight = height * 0.35;
-  const statsY = height - statsHeight - height * 0.05;
-  
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.fillRect(width * 0.1, statsY, width * 0.8, statsHeight);
-  
-  // Player name
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `bold ${Math.max(12, width * 0.05)}px Arial`;
-  ctx.fillText(card.playerName.toUpperCase(), width / 2, statsY + statsHeight * 0.15);
-  
-  // Stats
-  ctx.textAlign = 'left';
-  ctx.font = `${Math.max(10, width * 0.04)}px Arial`;
-  const statsX = width * 0.15;
-  const lineHeight = statsHeight * 0.18;
-  
-  ctx.fillText(`${card.year} ${card.brand}`, statsX, statsY + statsHeight * 0.35);
-  ctx.fillText(card.series, statsX, statsY + statsHeight * 0.35 + lineHeight);
-  ctx.fillText(`Position: ${card.position}`, statsX, statsY + statsHeight * 0.35 + lineHeight * 2);
-  
-  // Rarity badge
-  const rarityColors = {
-    legendary: '#fbbf24',
-    rare: '#a855f7',
-    common: '#6b7280'
-  };
-  
-  ctx.fillStyle = rarityColors[card.rarity as keyof typeof rarityColors] || rarityColors.common;
-  ctx.textAlign = 'center';
-  ctx.font = `bold ${Math.max(10, width * 0.04)}px Arial`;
-  ctx.fillText(card.rarity.toUpperCase(), width / 2, height - height * 0.03);
-  
-  return cardCanvas;
-}
+  // Add team name overlay
+  let teamNameHTML = '';
+  if (config.plaqueStyle !== 'blank') {
+    const nameplateY = positions.imageHeight - 90;
+    teamNameHTML = `
+      <div style="
+        position: absolute;
+        left: 0;
+        top: ${nameplateY}px;
+        width: 100%;
+        text-align: center;
+        font-family: Arial, sans-serif;
+        font-size: 30px;
+        font-weight: bold;
+        color: #000000;
+        text-transform: uppercase;
+      ">
+        ${config.teamName}
+      </div>
+    `;
+  }
 
-function drawPlaceholderCard(ctx: any, card: PlayerCardData, position: any) {
-  // Draw placeholder rectangle
-  ctx.fillStyle = '#f3f4f6';
-  ctx.fillRect(position.x, position.y, position.width, position.height);
-  
-  // Add border
-  ctx.strokeStyle = '#d1d5db';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(position.x, position.y, position.width, position.height);
-  
-  // Add text
-  ctx.fillStyle = '#374151';
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 16px Arial';
-  ctx.fillText(
-    card.playerName,
-    position.x + position.width / 2,
-    position.y + position.height / 2
-  );
-}
+  // Generate complete HTML
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roster Frame Preview - ${config.teamName}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .preview-container {
+      position: relative;
+      width: ${positions.imageWidth}px;
+      height: ${positions.imageHeight}px;
+      ${backgroundStyle}
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card {
+      position: relative;
+    }
+    
+    .placeholder-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .placeholder-card .player-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    
+    .placeholder-card .card-info {
+      font-size: 18px;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    
+    .placeholder-card .card-series {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+    
+    .placeholder-card .card-price {
+      font-size: 20px;
+      font-weight: bold;
+      color: #059669;
+    }
+    
+    .card-back {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, #1a1a2e, #16213e);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .card-back-border {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      bottom: 5px;
+      border: 3px solid #eab308;
+      pointer-events: none;
+    }
+    
+    .card-back-logo {
+      margin-top: 30%;
+      color: #eab308;
+      font-weight: bold;
+      font-size: 24px;
+      text-align: center;
+      line-height: 1.2;
+    }
+    
+    .card-back-stats {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      width: 80%;
+      text-align: center;
+      color: white;
+    }
+    
+    .card-back-stats .player-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .card-back-stats .stats-details {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    
+    .card-back-stats .rarity-badge {
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    
+    .rarity-indicator {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+    
+    .rarity-common {
+      background-color: #6b7280;
+    }
+    
+    .rarity-rare {
+      background-color: #a855f7;
+    }
+    
+    .rarity-legendary {
+      background-color: #fbbf24;
+    }
+    
+    .rarity-badge {
+      color: #fbbf24;
+    }
+    
+    .card-back-stats .rarity-badge {
+      color: ${config.playerCards[0]?.rarity === 'legendary' ? '#fbbf24' : 
+              config.playerCards[0]?.rarity === 'rare' ? '#a855f7' : '#6b7280'};
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    ${cardsHTML}
+    ${teamNameHTML}
+  </div>
+</body>
+</html>
+  `;
 
-function addRarityIndicator(ctx: any, rarity: string, position: any) {
-  const colors = {
-    legendary: '#fbbf24', // gold
-    rare: '#a855f7',      // purple
-    common: '#6b7280'     // gray
-  };
-  
-  const color = colors[rarity as keyof typeof colors] || colors.common;
-  
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(position.x + position.width - 15, position.y + 15, 8, 0, Math.PI * 2);
-  ctx.fill();
-  
-  // Add white border
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-}
-
-function addTeamNameOverlay(ctx: any, teamName: string, positions: any) {
-  // Position text in the center of the gold nameplate area
-  const nameplateY = positions.imageHeight - 90; // Center of gold nameplate
-  
-  // Add black team name text for gold nameplate background
-  ctx.fillStyle = '#000000';  // Black text for gold background
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 30px Arial';
-  
-  // Draw clean black text on gold nameplate
-  ctx.fillText(
-    teamName,
-    positions.imageWidth / 2,
-    nameplateY
-  );
+  return html;
 } 

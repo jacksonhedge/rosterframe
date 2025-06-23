@@ -318,11 +318,20 @@ export default function PreviewGenerator({
           <div className="border-t border-amber-200 pt-6">
             <h4 className="font-bold text-amber-900 mb-4">🖼️ Your Generated Preview</h4>
             <div className="text-center">
-              <img
-                src={generatedPreview.imageUrl}
-                alt="Generated plaque preview"
-                className="max-w-full h-auto rounded-lg shadow-lg border border-gray-200"
-              />
+              {generatedPreview.htmlUrl ? (
+                <iframe
+                  src={generatedPreview.htmlUrl}
+                  title="Generated plaque preview"
+                  className="w-full rounded-lg shadow-lg border border-gray-200"
+                  style={{ height: '400px', border: 'none' }}
+                />
+              ) : (
+                <img
+                  src={generatedPreview.imageUrl}
+                  alt="Generated plaque preview"
+                  className="max-w-full h-auto rounded-lg shadow-lg border border-gray-200"
+                />
+              )}
               <p className="text-sm text-gray-600 mt-2">
                 Generated on {new Date(generatedPreview.createdAt).toLocaleString()}
               </p>

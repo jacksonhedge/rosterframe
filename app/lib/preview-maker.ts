@@ -30,7 +30,8 @@ export interface PlaqueConfiguration {
 }
 
 export interface CompiledPreview {
-  imageUrl: string;
+  imageUrl?: string;
+  htmlUrl?: string;
   downloadUrl: string;
   previewId: string;
   createdAt: string;

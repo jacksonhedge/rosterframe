@@ -21,11 +21,25 @@ export async function GET(
     // Check if preview files exist
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'previews');
     const imagePath = path.join(uploadsDir, `${previewId}.png`);
+    const htmlPath = path.join(uploadsDir, `${previewId}.html`);
     const metadataPath = path.join(uploadsDir, `${previewId}.json`);
 
+    // Check which type of preview exists
+    let isHtmlPreview = false;
+    let previewPath = imagePath;
+    
     try {
-      await fs.access(imagePath);
       await fs.access(metadataPath);
+      
+      // Check if we have an HTML preview
+      try {
+        await fs.access(htmlPath);
+        isHtmlPreview = true;
+        previewPath = htmlPath;
+      } catch {
+        // Try image preview
+        await fs.access(imagePath);
+      }
     } catch (error) {
       return NextResponse.json(
         { error: 'Preview not found' },
@@ -40,21 +54,36 @@ export async function GET(
     
     // Create safe filename
     const safeTeamName = teamName.replace(/[^a-zA-Z0-9]/g, '_');
-    const filename = `${safeTeamName}_plaque_preview.png`;
+    
+    if (isHtmlPreview) {
+      // For HTML previews, we'll return the HTML file
+      // In a production app, you might want to convert this to an image using a service
+      const filename = `${safeTeamName}_plaque_preview.html`;
+      const htmlContent = await fs.readFile(previewPath, 'utf-8');
+      
+      return new NextResponse(htmlContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Length': Buffer.byteLength(htmlContent).toString(),
+        },
+      });
+    } else {
+      // For image previews
+      const filename = `${safeTeamName}_plaque_preview.png`;
+      const imageBuffer = await fs.readFile(imagePath);
 
-    // Read image file
-    const imageBuffer = await fs.readFile(imagePath);
-
-    // Return image with download headers
-    return new NextResponse(imageBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': 'image/png',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': imageBuffer.length.toString(),
-        'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
-      },
-    });
+      return new NextResponse(imageBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'image/png',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Length': imageBuffer.length.toString(),
+          'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+        },
+      });
+    }
 
   } catch (error) {
     console.error('Error downloading preview:', error);
