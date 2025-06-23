@@ -66,7 +66,12 @@ class EBayAPIService {
     this.baseUrl = this.environment === 'sandbox' 
       ? process.env.EBAY_SANDBOX_BASE_URL || 'https://api.sandbox.ebay.com'
       : process.env.EBAY_PRODUCTION_BASE_URL || 'https://api.ebay.com';
+  }
 
+  /**
+   * Validate credentials are present
+   */
+  private validateCredentials(): void {
     if (!this.appId || !this.devId || !this.certId) {
       throw new Error('eBay API credentials are required');
     }
@@ -76,6 +81,8 @@ class EBayAPIService {
    * Get OAuth access token for eBay API calls
    */
   private async getAccessToken(): Promise<string> {
+    this.validateCredentials();
+    
     // Check if we have a valid token
     if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
       return this.accessToken;
@@ -400,6 +407,24 @@ class EBayAPIService {
   }
 }
 
-// Export singleton instance
-export const ebayAPI = new EBayAPIService();
+// Lazy singleton instance
+let _instance: EBayAPIService | null = null;
+
+export const getEbayAPI = (): EBayAPIService => {
+  if (!_instance) {
+    _instance = new EBayAPIService();
+  }
+  return _instance;
+};
+
+// Export for backward compatibility
+export const ebayAPI = {
+  searchCards: (params: EBaySearchParams) => getEbayAPI().searchCards(params),
+  getItem: (itemId: string) => getEbayAPI().getItem(itemId),
+  parseSearchResponse: (data: any, params: EBaySearchParams) => getEbayAPI().parseSearchResponse(data, params),
+  calculateOurPrice: (ebayPrice: number) => getEbayAPI().calculateOurPrice(ebayPrice),
+  formatCardIdentifier: (card: EBayCard) => getEbayAPI().formatCardIdentifier(card),
+  testConnection: () => getEbayAPI().testConnection(),
+};
+
 export default ebayAPI; 

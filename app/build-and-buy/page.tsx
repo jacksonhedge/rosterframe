@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import StripePaymentForm from "../components/StripePaymentForm";
 import PlaquePreview from "../components/PlaquePreview";
 import LivePlaquePreview from "../components/LivePlaquePreview";
@@ -54,6 +54,9 @@ export default function BuildAndBuy() {
   // Helper function to get saved preview for a specific plaque configuration
   const getSavedPreviewForPlaque = (plaqueType: string, plaqueStyle: string) => {
     try {
+      if (typeof window === 'undefined') {
+        return null;
+      }
       const savedPreviews = JSON.parse(localStorage.getItem('savedPreviews') || '[]');
       return savedPreviews.find((preview: any) => 
         preview.plaqueType === plaqueType && 
@@ -450,7 +453,7 @@ export default function BuildAndBuy() {
   };
 
   // Plaque options - dynamically adjust based on roster size
-  const plaqueOptions = [
+  const plaqueOptions = useMemo(() => [
     {
       id: 'dark-maple-wood',
       name: 'Dark Maple Wood Plaque',
@@ -494,7 +497,7 @@ export default function BuildAndBuy() {
       plaqueType: getPlaqueType() as '8' | '10',
       style: 'black-marble'
     }
-  ];
+  ], [rosterPositions.length]);
 
   // Progress steps configuration
   const progressSteps = [
