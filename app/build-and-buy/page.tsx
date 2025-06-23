@@ -13,6 +13,7 @@ import { Navigation } from "../components/ui/Navigation";
 import EmailPreviewModal from "../components/EmailPreviewModal";
 import EmailCapturePopup from "../components/EmailCapturePopup";
 import SessionRecovery from "../components/SessionRecovery";
+import PlaquePreviewWithText from "../components/PlaquePreviewWithText";
 import { sessionManager, type BuildSession } from "@/app/lib/session-manager";
 import { autoEmailService } from "@/app/lib/auto-email-service";
 import { cardInventory, getCardsByPlayer } from "@/app/data/card-inventory";
@@ -756,10 +757,11 @@ export default function BuildAndBuy() {
                         {/* Plaque Preview Image */}
                         <div className="relative h-48 bg-gradient-to-b from-gray-100 to-gray-200 overflow-hidden">
                           {plaque.image && (
-                            <img
-                              src={plaque.image}
-                              alt={plaque.name}
-                              className="w-full h-full object-contain"
+                            <PlaquePreviewWithText
+                              plaqueImage={plaque.image}
+                              plaqueStyle={plaque.style}
+                              teamName={teamName}
+                              className="w-full h-full"
                             />
                           )}
                           {plaque.hasBackOption && (
