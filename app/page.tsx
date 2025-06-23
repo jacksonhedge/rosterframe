@@ -51,11 +51,6 @@ export default function Home() {
         ]}
       />
 
-      {/* Deployment Test Banner - REMOVE AFTER CONFIRMING */}
-      <div className="bg-green-500 text-white text-center py-2 text-sm font-bold">
-        🚀 NEW DEPLOYMENT ACTIVE - v4.0 - PRICING: $1.99/slot - TEXT SIZES REDUCED
-      </div>
-
       {/* Hero Section */}
       <Hero
         variant="centered"
