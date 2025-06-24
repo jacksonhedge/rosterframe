@@ -30,8 +30,8 @@ export function Navigation({
         fixed top-0 left-0 right-0 z-50
         transition-all duration-300 ease-out
         ${isScrolled 
-          ? 'bg-amber-50/95 backdrop-blur-md shadow-lg border-b border-amber-200' 
-          : 'bg-gradient-to-r from-amber-100/80 to-yellow-50/80 backdrop-blur-sm'
+          ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
+          : 'bg-gradient-to-r from-gray-100/80 to-gray-50/80 backdrop-blur-sm'
         }
         ${isHidden ? '-translate-y-full' : 'translate-y-0'}
       `}
@@ -44,8 +44,8 @@ export function Navigation({
             className="text-xl md:text-2xl font-bold transition-colors hover:scale-105 transform duration-200"
           >
             <span className={`${isScrolled 
-              ? 'text-amber-800 hover:text-amber-900' 
-              : 'text-amber-900 hover:text-amber-800'
+              ? 'text-gray-800 hover:text-orange-600' 
+              : 'text-gray-900 hover:text-orange-600'
             } transition-colors`}>
               {logo}
             </span>
@@ -60,12 +60,12 @@ export function Navigation({
                 className={`
                   relative text-sm font-medium
                   ${isScrolled 
-                    ? 'text-amber-700 hover:text-amber-900' 
-                    : 'text-amber-800 hover:text-amber-900'
+                    ? 'text-gray-700 hover:text-orange-600' 
+                    : 'text-gray-800 hover:text-orange-600'
                   }
                   transition-all duration-200 hover:scale-105 transform
                   after:content-[''] after:absolute after:left-0 after:bottom-[-4px]
-                  after:w-0 after:h-[2px] after:bg-amber-600
+                  after:w-0 after:h-[2px] after:bg-orange-600
                   after:transition-all after:duration-300
                   hover:after:w-full
                 `}
@@ -77,12 +77,12 @@ export function Navigation({
               href="/build-and-buy"
               className="
                 px-6 py-2 text-sm font-semibold
-                bg-gradient-to-r from-amber-600 to-yellow-600
+                bg-gradient-to-r from-orange-600 to-orange-500
                 text-white rounded-lg
-                hover:from-amber-700 hover:to-yellow-700
+                hover:from-orange-700 hover:to-orange-600
                 transform hover:scale-105 transition-all duration-200
                 shadow-md hover:shadow-lg
-                border border-amber-700/20
+                border border-orange-700/20
               "
             >
               Build My Plaque
@@ -94,8 +94,8 @@ export function Navigation({
             className={`
               md:hidden p-2 rounded-lg
               ${isScrolled 
-                ? 'text-amber-700 hover:text-amber-900 hover:bg-amber-100' 
-                : 'text-amber-800 hover:text-amber-900 hover:bg-amber-200/50'
+                ? 'text-gray-700 hover:text-orange-600 hover:bg-gray-100' 
+                : 'text-gray-800 hover:text-orange-600 hover:bg-gray-200/50'
               }
               transition-colors duration-200
             `}
