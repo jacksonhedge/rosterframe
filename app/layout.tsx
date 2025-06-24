@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ConditionalBanners } from "./components/ui/ConditionalBanners";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -68,7 +69,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ConditionalBanners>
+          {children}
+        </ConditionalBanners>
       </body>
     </html>
   );

@@ -92,6 +92,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       description: 'Import cards from eBay'
     },
     {
+      id: 'ebay-approval',
+      title: 'eBay Approval',
+      icon: '✅',
+      href: '/admin/ebay-inventory-v2',
+      description: 'Approve & manage eBay cards'
+    },
+    {
       id: 'settings',
       title: 'Settings',
       icon: '⚙️',

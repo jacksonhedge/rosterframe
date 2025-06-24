@@ -97,7 +97,7 @@ class EBayAPIService {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': `Basic ${credentials}`,
         },
-        body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
+        body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope/buy.marketing',
       });
 
       if (!response.ok) {
