@@ -627,7 +627,7 @@ export default function BuildAndBuy() {
                           {!isCollapsed && (
                             <div className="px-6 pb-6 border-t border-amber-200/50">
                               <div className="pt-4">
-                                {loadingCards[position.id] ? (
+                                {loadingCards && loadingCards[position.id] ? (
                                   <div className="text-center py-8">
                                     <div className="inline-flex items-center space-x-2">
                                       <svg className="animate-spin h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
