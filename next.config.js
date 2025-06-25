@@ -3,23 +3,7 @@ const nextConfig = {
   images: {
     domains: ['images.unsplash.com', 'via.placeholder.com'],
   },
-  webpack: (config, { isServer }) => {
-    // Exclude the broken file from compilation
-    config.module.rules.push({
-      test: /page-broken\.tsx$/,
-      use: 'ignore-loader'
-    });
-    
-    // Suppress the warning from @supabase/realtime-js
-    config.module.exprContextCritical = false;
-    
-    return config;
-  },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
+  turbopack: {},
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
@@ -27,6 +11,17 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
+  webpack: (config, { isServer }) => {
+    // Suppress the warning from @supabase/realtime-js
+    config.module.exprContextCritical = false;
+    
+    return config;
+  }
 }
 
 module.exports = nextConfig
