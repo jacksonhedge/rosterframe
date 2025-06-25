@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createClient } from '@/app/lib/supabase';
+import { supabase } from '@/app/lib/supabase';
 import { sendOrderConfirmation } from '@/app/lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 500 }
+      );
+    }
 
     // Handle the event
     switch (event.type) {

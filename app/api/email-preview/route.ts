@@ -4,6 +4,11 @@ import { NextResponse } from 'next/server';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Debug logging
+console.log('Resend API Key exists:', !!process.env.RESEND_API_KEY);
+console.log('From email:', process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev');
+console.log('API Key prefix:', process.env.RESEND_API_KEY?.substring(0, 10));
+
 export async function POST(request: Request) {
   try {
     const { 
@@ -45,7 +50,11 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Resend error:', error);
-      return NextResponse.json({ error }, { status: 400 });
+      return NextResponse.json({ 
+        error: typeof error === 'object' && error !== null ? 
+          (error.message || JSON.stringify(error)) : 
+          'Failed to send email' 
+      }, { status: 400 });
     }
 
     return NextResponse.json({ 

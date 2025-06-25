@@ -64,8 +64,8 @@ export default function TestEmailsPage() {
       } else {
         addResult('Preview Email', false, data.error || 'Failed to send');
       }
-    } catch (error) {
-      addResult('Preview Email', false, error.message);
+    } catch (error: any) {
+      addResult('Preview Email', false, error.message || 'Unknown error');
     } finally {
       setSending(null);
     }

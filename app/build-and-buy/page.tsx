@@ -219,6 +219,31 @@ export default function BuildAndBuy() {
     );
   };
 
+  // Add new position
+  const addPosition = () => {
+    const newId = Date.now().toString();
+    const defaultPosition = selectedSport === 'NFL' ? 'Flex' : 
+                           selectedSport === 'NBA' ? 'Bench' : 
+                           selectedSport === 'MLB' ? 'Utility' : 'Forward';
+    
+    setRosterPositions([...rosterPositions, {
+      id: newId,
+      position: defaultPosition,
+      playerName: ''
+    }]);
+  };
+
+  // Remove position
+  const removePosition = (id: string) => {
+    if (rosterPositions.length <= 1) return; // Keep at least one position
+    
+    setRosterPositions(rosterPositions.filter(pos => pos.id !== id));
+    // Also remove any selected card for this position
+    const newSelectedCards = { ...selectedCards };
+    delete newSelectedCards[id];
+    setSelectedCards(newSelectedCards);
+  };
+
   // Select card
   const selectCard = (positionId: string, card: CardOption) => {
     setSelectedCards({
@@ -487,9 +512,18 @@ export default function BuildAndBuy() {
             {/* Step 2: Building Roster */}
             {currentStep === 'building' && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                <div className="text-center mb-4">
-                  <h2 className="text-xl font-bold text-amber-900 mb-2">Build Your Roster</h2>
-                  <p className="text-sm text-amber-700">Add your players and see their cards populate automatically</p>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-center flex-1">
+                    <h2 className="text-xl font-bold text-amber-900 mb-2">Build Your Roster</h2>
+                    <p className="text-sm text-amber-700">Add your players and see their cards populate automatically</p>
+                  </div>
+                  <button
+                    onClick={addPosition}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                  >
+                    <span className="text-lg">+</span>
+                    Add Position
+                  </button>
                 </div>
                 
                 {/* Preview */}
@@ -508,12 +542,29 @@ export default function BuildAndBuy() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {rosterPositions.map((position, index) => (
-                      <div key={position.id} className="border-2 rounded-xl p-6 border-amber-300 bg-white/50">
+                      <div key={position.id} className="border-2 rounded-xl p-6 border-amber-300 bg-white/50 relative">
+                        {rosterPositions.length > 1 && (
+                          <button
+                            onClick={() => removePosition(position.id)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1"
+                            title="Remove position"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                         <div className="flex items-center space-x-3 mb-4">
                           <span className="bg-amber-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
                             {index + 1}
                           </span>
-                          <span className="text-lg font-bold text-amber-800">{position.position}</span>
+                          <input
+                            type="text"
+                            value={position.position}
+                            onChange={(e) => updatePosition(position.id, 'position', e.target.value)}
+                            className="text-lg font-bold text-amber-800 bg-transparent border-b-2 border-amber-300 focus:border-amber-500 outline-none px-1 flex-1"
+                            placeholder="Position name"
+                          />
                         </div>
                         
                         {position.position === 'Defense/ST' ? (
@@ -546,7 +597,13 @@ export default function BuildAndBuy() {
                     ))}
                   </div>
                   
-                  <div className="flex justify-center">
+                  <div className="flex justify-between items-center">
+                    <button
+                      onClick={() => setCurrentStep('setup')}
+                      className="bg-gray-500 text-white px-6 py-3 rounded-xl text-lg font-semibold shadow-lg hover:bg-gray-600 transform hover:scale-105 transition inline-flex items-center space-x-2"
+                    >
+                      <span>← Back to Setup</span>
+                    </button>
                     <button
                       onClick={() => setCurrentStep('cards')}
                       disabled={!canProceedToCards()}
@@ -861,6 +918,16 @@ export default function BuildAndBuy() {
                   {promoError && (
                     <p className="text-red-600 text-sm mt-1">{promoError}</p>
                   )}
+                </div>
+                
+                {/* Navigation */}
+                <div className="mb-6">
+                  <button
+                    onClick={() => setCurrentStep('cards')}
+                    className="bg-gray-500 text-white px-6 py-3 rounded-xl text-lg font-semibold shadow-lg hover:bg-gray-600 transform hover:scale-105 transition inline-flex items-center space-x-2"
+                  >
+                    <span>← Back to Card Selection</span>
+                  </button>
                 </div>
                 
                 {/* Payment Form */}

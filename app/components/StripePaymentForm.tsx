@@ -67,6 +67,29 @@ function CheckoutForm({
               expected_delivery: orderDetails.isPreOrder ? 'March 2025' : '7-10 business days',
               promo_code: orderDetails.promoCode || '',
             },
+            orderData: {
+              customerEmail: customerInfo.email || 'customer@example.com', // Will be collected on success page
+              customerName: customerInfo.teamName, // Using team name for now
+              plaqueType: orderDetails.plaqueName.toLowerCase().includes('wood') ? 'wood' : 
+                         orderDetails.plaqueName.toLowerCase().includes('glass') ? 'glass' : 'acrylic',
+              plaqueSize: 'medium', // Default for now
+              giftPackaging: customerInfo.isGift,
+              leagueData: { teamName: customerInfo.teamName }, // Simplified for now
+              selectedPlayers: { count: orderDetails.numCards }, // Simplified for now
+              subtotal: amount / 100,
+              discountAmount: orderDetails.savings || 0,
+              discountCode: orderDetails.promoCode,
+              shippingCost: 0, // Free shipping for now
+              taxAmount: 0, // No tax calculation yet
+              shippingAddress: {
+                line1: '123 Main St', // Will be collected on success page
+                city: 'Anytown',
+                state: 'CA',
+                postal_code: '12345',
+                country: 'US'
+              },
+              previewImageUrl: null // Will be generated later
+            }
           }),
         });
 
@@ -117,7 +140,31 @@ function CheckoutForm({
             is_pre_order: orderDetails.isPreOrder?.toString() || 'false',
             pre_order_savings: orderDetails.savings?.toString() || '0',
             expected_delivery: orderDetails.isPreOrder ? 'March 2025' : '7-10 business days',
+            promo_code: orderDetails.promoCode || '',
           },
+          orderData: {
+            customerEmail: customerInfo.email || 'customer@example.com',
+            customerName: customerInfo.teamName,
+            plaqueType: orderDetails.plaqueName.toLowerCase().includes('wood') ? 'wood' : 
+                       orderDetails.plaqueName.toLowerCase().includes('glass') ? 'glass' : 'acrylic',
+            plaqueSize: 'medium',
+            giftPackaging: customerInfo.isGift,
+            leagueData: { teamName: customerInfo.teamName },
+            selectedPlayers: { count: orderDetails.numCards },
+            subtotal: amount / 100,
+            discountAmount: orderDetails.savings || 0,
+            discountCode: orderDetails.promoCode,
+            shippingCost: 0,
+            taxAmount: 0,
+            shippingAddress: {
+              line1: '123 Main St',
+              city: 'Anytown',
+              state: 'CA',
+              postal_code: '12345',
+              country: 'US'
+            },
+            previewImageUrl: null
+          }
         }),
       });
 
@@ -136,7 +183,7 @@ function CheckoutForm({
         elements,
         clientSecret: data.clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/build-and-buy?payment=success`,
+          return_url: `${window.location.origin}/order-success`,
         },
         redirect: 'if_required',
       });
