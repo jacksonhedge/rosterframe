@@ -4,6 +4,12 @@ const nextConfig = {
     domains: ['images.unsplash.com', 'via.placeholder.com'],
   },
   webpack: (config, { isServer }) => {
+    // Exclude the broken file from compilation
+    config.module.rules.push({
+      test: /page-broken\.tsx$/,
+      use: 'ignore-loader'
+    });
+    
     // Suppress the warning from @supabase/realtime-js
     config.module.exprContextCritical = false;
     

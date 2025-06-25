@@ -1,18 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
   const paymentIntent = searchParams.get('payment_intent');
-  const paymentIntentClientSecret = searchParams.get('payment_intent_client_secret');
   const redirectStatus = searchParams.get('redirect_status');
 
   useEffect(() => {
@@ -94,7 +93,7 @@ export default function OrderSuccessPage() {
           </div>
 
           <p className="text-gray-600">
-            We've sent a confirmation email to <span className="font-semibold">{order?.customer_email}</span>
+            We&apos;ve sent a confirmation email to <span className="font-semibold">{order?.customer_email}</span>
           </p>
         </div>
 
@@ -189,7 +188,7 @@ export default function OrderSuccessPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg mb-1">Delivery</h3>
-                <p className="text-gray-600">You'll receive tracking information once your order ships.</p>
+                <p className="text-gray-600">You&apos;ll receive tracking information once your order ships.</p>
               </div>
             </div>
           </div>
@@ -198,30 +197,33 @@ export default function OrderSuccessPage() {
         {/* Action Buttons */}
         <div className="text-center space-y-4">
           <Link 
-            href="/build-and-buy"
-            className="inline-block bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-amber-700 transition transform hover:scale-105 shadow-lg"
+            href="/build-and-buy" 
+            className="inline-block bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-700 transition"
           >
             Create Another Plaque
           </Link>
           
-          <div>
-            <Link 
-              href="/"
-              className="text-amber-600 hover:text-amber-700 font-semibold"
-            >
-              Return to Homepage
-            </Link>
+          <div className="text-gray-600">
+            <p>Questions about your order?</p>
+            <p>Contact us at <a href="mailto:support@rosterframe.com" className="text-amber-600 hover:underline">support@rosterframe.com</a></p>
           </div>
-        </div>
-
-        {/* Contact Support */}
-        <div className="mt-12 text-center text-gray-600">
-          <p>Have questions about your order?</p>
-          <a href="mailto:support@rosterframe.com" className="text-amber-600 hover:text-amber-700 font-semibold">
-            Contact Support
-          </a>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-amber-600 mx-auto mb-4"></div>
+          <p className="text-lg text-amber-800">Loading...</p>
+        </div>
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }
