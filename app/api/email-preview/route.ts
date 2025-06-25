@@ -25,8 +25,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // For development, you can use onboarding@resend.dev as the from address
-    // In production, you'll need to verify your domain with Resend
+    // Use your verified domain or fall back to development email
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
     const { data, error } = await resend.emails.send({
