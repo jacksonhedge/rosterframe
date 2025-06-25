@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import ReferralEmail from '@/app/emails/referral-email';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/lib/supabase';
+import { supabase } from '@/app/lib/supabase';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -56,18 +56,19 @@ export async function POST(request: Request) {
     }
 
     // Track referral in database
-    const supabase = createClient();
-    await supabase.from('referrals').insert({
-      sender_email: senderEmail,
-      sender_name: senderName,
-      recipient_email: recipientEmail,
-      recipient_name: recipientName,
-      referral_code: finalReferralCode,
-      discount_amount: discountAmount || 10,
-      message: message,
-      status: 'sent',
-      sent_at: new Date().toISOString(),
-    });
+    if (supabase) {
+      await supabase.from('referrals').insert({
+        sender_email: senderEmail,
+        sender_name: senderName,
+        recipient_email: recipientEmail,
+        recipient_name: recipientName,
+        referral_code: finalReferralCode,
+        discount_amount: discountAmount || 10,
+        message: message,
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 

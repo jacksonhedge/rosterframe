@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 import OrderConfirmationEmail from '@/app/emails/order-confirmation-email';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/lib/supabase';
+import { supabase } from '@/app/lib/supabase';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -17,7 +17,13 @@ export async function POST(request: Request) {
     }
 
     // Fetch order details from Supabase
-    const supabase = createClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 500 }
+      );
+    }
+    
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
