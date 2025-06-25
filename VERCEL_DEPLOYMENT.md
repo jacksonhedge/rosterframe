@@ -23,6 +23,7 @@ STRIPE_SECRET_KEY=[Your secret key - keep this secure!]
 
 # Resend
 RESEND_API_KEY=re_34zRDLEb_DTPjLyC1TxbXSVzCAbwNLhcW
+RESEND_FROM_EMAIL=noreply@send.rosterframe.com
 
 # eBay (if needed - add your production keys)
 EBAY_APP_ID=your_ebay_app_id
@@ -57,6 +58,7 @@ Click "Deploy" and wait for the build to complete.
 3. **Run Supabase migrations**:
    - Go to Supabase Dashboard → SQL Editor
    - Run the SQL from `/supabase/promo_codes.sql`
+   - Run the SQL from `/supabase/migrations/create_referrals_table.sql`
 
 ## 6. Test Production
 
@@ -65,6 +67,8 @@ Click "Deploy" and wait for the build to complete.
 3. Complete a $1 test purchase
 4. Check Stripe Dashboard for payment
 5. Check Supabase for promo code tracking
+6. Visit `/test-emails` to test email functionality
+7. Verify order confirmation email is sent after purchase
 
 ## Your URLs will be:
 - Production: `https://rosterframe.vercel.app` (or your custom domain)
