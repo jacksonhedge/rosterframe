@@ -45,6 +45,7 @@ export default function BuildAndBuy() {
   const [selectedSport, setSelectedSport] = useState<'NFL' | 'MLB' | 'NBA' | 'NHL'>('NFL');
   const [isGift, setIsGift] = useState(false);
   const [selectedPlaque, setSelectedPlaque] = useState<any>(null);
+  const [goldPosition, setGoldPosition] = useState<'top' | 'middle' | 'bottom'>('bottom');
   const [rosterPositions, setRosterPositions] = useState<Position[]>([]);
   const [selectedCards, setSelectedCards] = useState<Record<string, CardOption>>({});
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -471,6 +472,7 @@ export default function BuildAndBuy() {
                                 plaqueImage={plaque.image}
                                 plaqueStyle={plaque.style}
                                 teamName={teamName}
+                                goldPosition={goldPosition}
                                 className="w-full h-full"
                               />
                             )}
@@ -486,6 +488,45 @@ export default function BuildAndBuy() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Gold Position Selection */}
+                  {selectedPlaque && (
+                    <div>
+                      <div className="text-center mb-4">
+                        <h3 className="text-lg font-bold text-amber-900 mb-1">Gold Plaque Position</h3>
+                        <p className="text-sm text-amber-700">Where would you like your team name displayed?</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                          { position: 'top', label: 'Top', icon: '⬆️', description: 'Team name at the top' },
+                          { position: 'middle', label: 'Middle', icon: '↔️', description: 'Team name in the center' },
+                          { position: 'bottom', label: 'Bottom', icon: '⬇️', description: 'Team name at the bottom (Default)' }
+                        ].map((option) => (
+                          <button
+                            key={option.position}
+                            onClick={() => setGoldPosition(option.position as 'top' | 'middle' | 'bottom')}
+                            className={`p-4 rounded-lg border-2 transition-all ${
+                              goldPosition === option.position
+                                ? 'bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-400 shadow-lg'
+                                : 'bg-white/70 border-amber-200 hover:border-amber-300'
+                            }`}
+                          >
+                            <div className="text-2xl mb-2">{option.icon}</div>
+                            <div className={`font-semibold ${
+                              goldPosition === option.position ? 'text-amber-800' : 'text-amber-700'
+                            }`}>
+                              {option.label}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">{option.description}</div>
+                            {option.position === 'bottom' && (
+                              <div className="text-xs text-amber-600 mt-1 font-semibold">(Recommended)</div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Continue Button */}
                   <div className="flex justify-center pt-4">
@@ -944,7 +985,8 @@ export default function BuildAndBuy() {
                     numCards: Object.keys(selectedCards).length,
                     isPreOrder: isPreOrder,
                     savings: isPreOrder && !promoApplied ? (rosterPositions.length * 1.99 + Object.values(selectedCards).reduce((total, card) => total + card.price, 0)) * preOrderDiscount : 0,
-                    promoCode: promoApplied ? promoCode : undefined
+                    promoCode: promoApplied ? promoCode : undefined,
+                    goldPosition: goldPosition
                   }}
                   onPaymentSuccess={handlePaymentSuccess}
                   onPaymentError={handlePaymentError}

@@ -7,39 +7,53 @@ interface PlaquePreviewWithTextProps {
   plaqueStyle: string;
   teamName: string;
   className?: string;
+  goldPosition?: 'top' | 'middle' | 'bottom';
 }
 
 // Default text positioning for each plaque style - positioned on the gold nameplate
 const DEFAULT_POSITIONS = {
-  'dark-maple-wood': { x: 50, y: 75, fontSize: 20, color: '#000000' },
-  'clear': { x: 50, y: 78, fontSize: 20, color: '#000000' },
-  'clear-plaque': { x: 50, y: 78, fontSize: 20, color: '#000000' },
-  'black-marble': { x: 50, y: 75, fontSize: 20, color: '#000000' },
-  'blank': { x: 50, y: 50, fontSize: 20, color: '#000000' }
+  'dark-maple-wood': { 
+    top: { x: 50, y: 25, fontSize: 20, color: '#000000' },
+    middle: { x: 50, y: 50, fontSize: 20, color: '#000000' },
+    bottom: { x: 50, y: 75, fontSize: 20, color: '#000000' }
+  },
+  'clear': { 
+    top: { x: 50, y: 22, fontSize: 20, color: '#000000' },
+    middle: { x: 50, y: 50, fontSize: 20, color: '#000000' },
+    bottom: { x: 50, y: 78, fontSize: 20, color: '#000000' }
+  },
+  'clear-plaque': { 
+    top: { x: 50, y: 22, fontSize: 20, color: '#000000' },
+    middle: { x: 50, y: 50, fontSize: 20, color: '#000000' },
+    bottom: { x: 50, y: 78, fontSize: 20, color: '#000000' }
+  },
+  'black-marble': { 
+    top: { x: 50, y: 25, fontSize: 20, color: '#000000' },
+    middle: { x: 50, y: 50, fontSize: 20, color: '#000000' },
+    bottom: { x: 50, y: 75, fontSize: 20, color: '#000000' }
+  },
+  'blank': { 
+    top: { x: 50, y: 25, fontSize: 20, color: '#000000' },
+    middle: { x: 50, y: 50, fontSize: 20, color: '#000000' },
+    bottom: { x: 50, y: 75, fontSize: 20, color: '#000000' }
+  }
 };
 
 export default function PlaquePreviewWithText({ 
   plaqueImage, 
   plaqueStyle,
   teamName,
-  className = ''
+  className = '',
+  goldPosition = 'bottom'
 }: PlaquePreviewWithTextProps) {
-  const [textPosition, setTextPosition] = useState(DEFAULT_POSITIONS[plaqueStyle as keyof typeof DEFAULT_POSITIONS] || DEFAULT_POSITIONS['dark-maple-wood']);
+  const stylePositions = DEFAULT_POSITIONS[plaqueStyle as keyof typeof DEFAULT_POSITIONS] || DEFAULT_POSITIONS['dark-maple-wood'];
+  const [textPosition, setTextPosition] = useState(stylePositions[goldPosition]);
 
-  // Load saved engraving configuration from localStorage
+  // Update text position when goldPosition changes
   useEffect(() => {
-    const savedConfig = localStorage.getItem('engraving_config');
-    if (savedConfig) {
-      try {
-        const config = JSON.parse(savedConfig);
-        if (config[plaqueStyle]) {
-          setTextPosition(config[plaqueStyle]);
-        }
-      } catch (error) {
-        console.error('Error loading saved engraving config:', error);
-      }
-    }
-  }, [plaqueStyle]);
+    const stylePositions = DEFAULT_POSITIONS[plaqueStyle as keyof typeof DEFAULT_POSITIONS] || DEFAULT_POSITIONS['dark-maple-wood'];
+    setTextPosition(stylePositions[goldPosition]);
+  }, [plaqueStyle, goldPosition]);
 
   // Calculate font size based on team name length
   const calculateFontSize = () => {

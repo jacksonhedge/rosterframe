@@ -66,6 +66,7 @@ function CheckoutForm({
               pre_order_savings: orderDetails.savings?.toString() || '0',
               expected_delivery: orderDetails.isPreOrder ? 'March 2025' : '7-10 business days',
               promo_code: orderDetails.promoCode || '',
+              gold_position: orderDetails.goldPosition || 'bottom',
             },
             orderData: {
               customerEmail: customerInfo.email || 'customer@example.com', // Will be collected on success page
@@ -116,72 +117,17 @@ function CheckoutForm({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !clientSecret) {
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Create payment intent
-      const response = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount,
-          metadata: {
-            team_name: customerInfo.teamName,
-            is_gift: customerInfo.isGift.toString(),
-            plaque_name: orderDetails.plaqueName,
-            num_positions: orderDetails.numPositions.toString(),
-            num_cards: orderDetails.numCards.toString(),
-            is_pre_order: orderDetails.isPreOrder?.toString() || 'false',
-            pre_order_savings: orderDetails.savings?.toString() || '0',
-            expected_delivery: orderDetails.isPreOrder ? 'March 2025' : '7-10 business days',
-            promo_code: orderDetails.promoCode || '',
-          },
-          orderData: {
-            customerEmail: customerInfo.email || 'customer@example.com',
-            customerName: customerInfo.teamName,
-            plaqueType: orderDetails.plaqueName.toLowerCase().includes('wood') ? 'wood' : 
-                       orderDetails.plaqueName.toLowerCase().includes('glass') ? 'glass' : 'acrylic',
-            plaqueSize: 'medium',
-            giftPackaging: customerInfo.isGift,
-            leagueData: { teamName: customerInfo.teamName },
-            selectedPlayers: { count: orderDetails.numCards },
-            subtotal: amount / 100,
-            discountAmount: orderDetails.savings || 0,
-            discountCode: orderDetails.promoCode,
-            shippingCost: 0,
-            taxAmount: 0,
-            shippingAddress: {
-              line1: '123 Main St',
-              city: 'Anytown',
-              state: 'CA',
-              postal_code: '12345',
-              country: 'US'
-            },
-            previewImageUrl: null
-          }
-        }),
-      });
-
-      const data = await response.json();
-      
-      // Check if this is a mock payment
-      if (data.warning) {
-        console.warn(data.warning);
-        // For mock payments, simulate success
-        onPaymentSuccess(data.paymentIntentId);
-        return;
-      }
-
-      // Confirm real payment
-      const { error: stripeError } = await stripe.confirmPayment({
+      // Confirm payment with the existing client secret
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
         elements,
-        clientSecret: data.clientSecret,
+        clientSecret,
         confirmParams: {
           return_url: `${window.location.origin}/order-success`,
         },
@@ -190,12 +136,11 @@ function CheckoutForm({
 
       if (stripeError) {
         onPaymentError(stripeError.message || 'Payment failed');
-      } else {
-        if (onPaymentSuccess) {
-          onPaymentSuccess(data.clientSecret);
-        }
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment succeeded
+        onPaymentSuccess(paymentIntent.id);
       }
-    } catch {
+    } catch (error) {
       onPaymentError('Payment failed. Please try again.');
     } finally {
       setIsLoading(false);
