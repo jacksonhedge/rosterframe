@@ -55,7 +55,7 @@ export default function Home() {
       <Hero
         variant="centered"
         title="Showcase Your Fantasy Legacy"
-        description="Create stunning custom plaques featuring your championship fantasy team. Premium materials, professional design, legendary results."
+        description="Transform your fantasy championship from a phone screen to a stunning wall display."
         primaryAction={{ 
           text: "Start Building Your Frame", 
           href: "/build-and-buy" 
@@ -66,16 +66,87 @@ export default function Home() {
         }}
       >
         <ScrollFade delay={600} className="mt-12">
-          <div className="relative mx-auto max-w-md">
-            <Image
-              src="/images/RosterFrameBackground.png"
-              alt="Custom Fantasy Roster Frame"
-              width={400}
-              height={300}
-              className="rounded-xl shadow-2xl"
-              priority
-            />
-            <div className="absolute -inset-4 bg-gradient-primary opacity-20 blur-2xl -z-10" />
+          <div className="relative mx-auto max-w-6xl">
+            <div className="flex items-center justify-center gap-8 flex-wrap lg:flex-nowrap">
+              {/* Phone with Fantasy League */}
+              <div className="relative">
+                <div className="bg-gray-800 rounded-[3rem] p-3 shadow-2xl">
+                  <div className="bg-white rounded-[2.5rem] overflow-hidden w-[280px] h-[600px] relative">
+                    {/* Placeholder for phone/fantasy league image */}
+                    <div className="w-full h-full bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center">
+                      <div className="text-center p-4">
+                        <p className="text-gray-500 text-sm mb-2">Fantasy League View</p>
+                        <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+                          <h4 className="font-bold text-gray-800 mb-2">Championship Team</h4>
+                          <div className="text-xs text-gray-600 space-y-1 text-left">
+                            <div>QB: Patrick Mahomes</div>
+                            <div>RB: Christian McCaffrey</div>
+                            <div>WR: Justin Jefferson</div>
+                            <div>TE: Travis Kelce</div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-400">[Your phone screenshot here]</p>
+                      </div>
+                    </div>
+                    <Image
+                      src="/images/phone-fantasy-league.png"
+                      alt="Fantasy League on Phone"
+                      width={280}
+                      height={600}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        // Hide image if it doesn't exist, showing the placeholder
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-purple-400 opacity-20 blur-2xl -z-10" />
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center">
+                <svg className="w-16 h-16 text-amber-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </div>
+
+              {/* Framed Roster */}
+              <div className="relative">
+                <div className="bg-white rounded-lg shadow-2xl p-2">
+                  <div className="relative w-[400px] h-[300px] bg-gradient-to-br from-amber-50 to-yellow-50 rounded flex items-center justify-center">
+                    {/* Placeholder for framed team image */}
+                    <div className="text-center p-6">
+                      <p className="text-gray-500 text-sm mb-2">Framed Display</p>
+                      <div className="bg-white rounded shadow-lg p-4">
+                        <h4 className="font-bold text-amber-800 mb-2">2024 Champions</h4>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="bg-amber-100 p-2 rounded">Card 1</div>
+                          <div className="bg-amber-100 p-2 rounded">Card 2</div>
+                          <div className="bg-amber-100 p-2 rounded">Card 3</div>
+                          <div className="bg-amber-100 p-2 rounded">Card 4</div>
+                          <div className="bg-amber-100 p-2 rounded">Card 5</div>
+                          <div className="bg-amber-100 p-2 rounded">Card 6</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2">[Your frame image here]</p>
+                    </div>
+                    <Image
+                      src="/images/framed-roster-display.png"
+                      alt="Framed Roster Display"
+                      width={400}
+                      height={300}
+                      className="absolute inset-0 w-full h-full object-cover rounded"
+                      onError={(e) => {
+                        // Hide image if it doesn't exist, showing the placeholder
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-amber-400 to-yellow-400 opacity-20 blur-2xl -z-10" />
+              </div>
+            </div>
           </div>
         </ScrollFade>
       </Hero>

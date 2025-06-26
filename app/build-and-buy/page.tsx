@@ -10,6 +10,7 @@ import PreviewGenerator from "../components/PreviewGenerator";
 import PlayerSearch from "../components/PlayerSearch";
 import EmailCapturePopup from "../components/EmailCapturePopup";
 import PlaquePreviewWithText from "../components/PlaquePreviewWithText";
+import PlaquePreviewWithCards from "../components/PlaquePreviewWithCards";
 import { sessionManager } from "@/app/lib/session-manager";
 import type { BuildSession } from "@/app/lib/session-manager";
 import { autoEmailService } from "@/app/lib/auto-email-service";
@@ -571,10 +572,20 @@ export default function BuildAndBuy() {
                 {selectedPlaque && (
                   <div className="mb-8 bg-white rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-700 mb-2 text-center">Preview</h3>
-                    <PlaquePreviewWithText
+                    <PlaquePreviewWithCards
                       plaqueImage={selectedPlaque.image}
                       plaqueStyle={selectedPlaque.style}
                       teamName={teamName}
+                      goldPosition={goldPosition}
+                      selectedCards={rosterPositions
+                        .filter(pos => pos.playerName.trim() !== '')
+                        .map(pos => ({
+                          id: pos.id,
+                          playerName: pos.playerName,
+                          position: pos.position,
+                          imageUrl: selectedCards[pos.id]?.imageUrl
+                        }))}
+                      maxCards={rosterPositions.length}
                       className="w-full max-w-md mx-auto"
                     />
                   </div>

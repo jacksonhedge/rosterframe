@@ -70,38 +70,6 @@ const EbayAd = () => (
   </Link>
 );
 
-const GriddyAd = () => (
-  <Link 
-    href="https://griddy.com" 
-    target="_blank" 
-    rel="noopener noreferrer"
-    className="block h-full"
-  >
-    <div className="h-full bg-gradient-to-b from-purple-600 to-purple-800 rounded-lg p-4 flex flex-col items-center justify-center text-white text-center">
-      <div className="mb-3">
-        <div className="text-2xl font-bold">GRIDDY</div>
-      </div>
-      <div className="text-sm font-medium mb-2">
-        Fantasy Sports Hub
-      </div>
-      <div className="text-xs leading-tight mb-3">
-        Level up your<br/>
-        fantasy game
-      </div>
-      <div className="space-y-1 text-[10px]">
-        <div>• Expert Analysis</div>
-        <div>• Live Updates</div>
-        <div>• Winning Strategies</div>
-      </div>
-      <div className="mt-auto pt-4">
-        <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-purple-900 rounded-full px-3 py-1 text-xs font-bold">
-          Get Started
-        </div>
-      </div>
-    </div>
-  </Link>
-);
-
 // Placeholder for future ads
 const ComingSoonAd = ({ name }: { name: string }) => (
   <div className="h-full bg-gradient-to-b from-gray-100 to-gray-200 rounded-lg p-4 flex flex-col items-center justify-center text-gray-600 text-center">
@@ -122,8 +90,8 @@ export function BannerAd({ position }: BannerAdProps) {
   // Define ads for each position
   const leftAds = [
     <BankrollAd key="bankroll" />,
-    <GriddyAd key="griddy" />,
-    <ComingSoonAd key="coming1" name="Partner Ad" />
+    <ComingSoonAd key="coming1" name="Partner Ad" />,
+    <ComingSoonAd key="coming2" name="Sponsor Ad" />
   ];
   
   const rightAds = [
