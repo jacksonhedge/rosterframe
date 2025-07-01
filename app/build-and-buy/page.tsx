@@ -7,10 +7,12 @@ import { Navigation } from "../components/ui/Navigation";
 import StripePaymentForm from "../components/StripePaymentForm";
 import PlaquePreview from "../components/PlaquePreview";
 import PreviewGenerator from "../components/PreviewGenerator";
-import PlayerSearch from "../components/PlayerSearch";
+import PlayerSearchEnhanced from "../components/PlayerSearchEnhanced";
 import EmailCapturePopup from "../components/EmailCapturePopup";
 import PlaquePreviewWithText from "../components/PlaquePreviewWithText";
 import PlaquePreviewWithCards from "../components/PlaquePreviewWithCards";
+import CardSelectionGrid from "../components/CardSelectionGrid";
+import CheckoutFlowEnhanced from "../components/CheckoutFlowEnhanced";
 import { sessionManager } from "@/app/lib/session-manager";
 import type { BuildSession } from "@/app/lib/session-manager";
 import { autoEmailService } from "@/app/lib/auto-email-service";
@@ -53,6 +55,7 @@ export default function BuildAndBuy() {
   const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [loadingCards, setLoadingCards] = useState<Record<string, boolean>>({});
   const [playerCards, setPlayerCards] = useState<Record<string, CardOption[]>>({});
+  const [showCardBacks, setShowCardBacks] = useState(false);
   
   // Payment state
   const [selectedShipping, setSelectedShipping] = useState('standard');
@@ -572,6 +575,25 @@ export default function BuildAndBuy() {
                 {selectedPlaque && (
                   <div className="mb-8 bg-white rounded-lg p-4">
                     <h3 className="text-base font-semibold text-gray-700 mb-2 text-center">Preview</h3>
+                    
+                    {/* Toggle for Clear Plaque */}
+                    {selectedPlaque.hasBackOption && (
+                      <div className="text-center mb-4">
+                        <p className="text-sm text-amber-700 mb-2">
+                          💡 Clear Plaque can display cards from either side!
+                        </p>
+                        <button
+                          onClick={() => setShowCardBacks(!showCardBacks)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg transition-colors"
+                        >
+                          <span>Show Card {showCardBacks ? 'Fronts' : 'Backs'}</span>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                    
                     <PlaquePreviewWithCards
                       plaqueImage={selectedPlaque.image}
                       plaqueStyle={selectedPlaque.style}
@@ -586,6 +608,7 @@ export default function BuildAndBuy() {
                           imageUrl: selectedCards[pos.id]?.imageUrl
                         }))}
                       maxCards={rosterPositions.length}
+                      showCardBacks={showCardBacks}
                       className="w-full max-w-md mx-auto"
                     />
                   </div>
@@ -633,7 +656,7 @@ export default function BuildAndBuy() {
                             className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-amber-800 font-medium"
                           />
                         ) : (
-                          <PlayerSearch
+                          <PlayerSearchEnhanced
                             value={position.playerName}
                             onChange={async (playerName) => {
                               updatePosition(position.id, 'playerName', playerName);
@@ -643,6 +666,10 @@ export default function BuildAndBuy() {
                             }}
                             placeholder={`Type ${selectedSport} player name...`}
                             className="text-amber-800 font-medium"
+                            sport={selectedSport}
+                            onCardCountFetch={(count, priceRange) => {
+                              console.log(`${position.playerName}: ${count} cards, $${priceRange.min}-$${priceRange.max}`);
+                            }}
                           />
                         )}
                       </div>
@@ -747,115 +774,18 @@ export default function BuildAndBuy() {
                                     </div>
                                   </div>
                                 ) : (
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    {cardOptions.map((card) => {
-                                      const isSelected = selectedCard?.id === card.id;
-                                      return (
-                                        <div
-                                          key={card.id}
-                                          onClick={() => {
-                                            if (card.series === 'Browse eBay') {
-                                              window.open(card.listingUrl, '_blank');
-                                            } else {
-                                              selectCard(position.id, card);
-                                            }
-                                          }}
-                                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all transform hover:scale-105 ${
-                                            isSelected 
-                                              ? 'border-amber-500 bg-amber-50 shadow-lg' 
-                                              : 'border-gray-200 bg-white hover:border-amber-300 hover:shadow-md'
-                                          }`}
-                                        >
-                                          <div className={`rounded-lg aspect-[3/4] mb-3 flex items-center justify-center border overflow-hidden ${
-                                            card.series === 'I have my own' 
-                                              ? 'bg-gradient-to-br from-green-100 to-emerald-100 border-green-300'
-                                              : card.series === 'Browse eBay'
-                                              ? 'bg-gradient-to-br from-blue-100 to-indigo-100 border-blue-300'
-                                              : 'bg-gradient-to-br from-amber-100 to-yellow-100 border-amber-200'
-                                          }`}>
-                                            {card.imageUrl && card.imageUrl.trim() !== '' && !card.imageUrl.startsWith('#') ? (
-                                              <img 
-                                                src={card.imageUrl} 
-                                                alt={`${card.playerName} ${card.year} ${card.brand}`}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                  const target = e.target as HTMLImageElement;
-                                                  target.style.display = 'none';
-                                                  const parent = target.parentElement;
-                                                  if (parent) {
-                                                    parent.innerHTML = `
-                                                      <div class="text-center p-2">
-                                                        <div class="text-3xl mb-2">🃏</div>
-                                                        <div class="text-sm font-bold text-amber-800">${card.playerName}</div>
-                                                        <div class="text-xs text-amber-600">${card.brand}</div>
-                                                      </div>
-                                                    `;
-                                                  }
-                                                }}
-                                              />
-                                            ) : (
-                                              <div className="text-center p-2">
-                                                {card.series === 'I have my own' ? (
-                                                  <>
-                                                    <div className="text-3xl mb-2">🃏</div>
-                                                    <div className="text-sm font-bold text-green-800">I Have</div>
-                                                    <div className="text-sm font-bold text-green-800">My Own</div>
-                                                    <div className="text-xs text-green-600 mt-1">FREE</div>
-                                                  </>
-                                                ) : card.series === 'Browse eBay' ? (
-                                                  <>
-                                                    <div className="text-3xl mb-2">🔍</div>
-                                                    <div className="text-sm font-bold text-blue-800">Search</div>
-                                                    <div className="text-sm font-bold text-blue-800">eBay</div>
-                                                    <div className="text-xs text-blue-600 mt-1">Browse Options</div>
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <div className="text-xs font-bold text-amber-800 mb-1">{card.year}</div>
-                                                    <div className="text-sm font-bold text-amber-900 leading-tight">{card.playerName}</div>
-                                                    <div className="text-xs text-amber-600 mt-1">{card.brand}</div>
-                                                  </>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                          
-                                          <div className="space-y-1">
-                                            <div className="flex justify-between items-center">
-                                              <span className="text-xs font-semibold text-gray-600">Year:</span>
-                                              <span className="text-xs font-bold">{card.year}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                              <span className="text-xs font-semibold text-gray-600">Condition:</span>
-                                              <span className="text-xs font-bold">{card.condition}</span>
-                                            </div>
-                                            <div className="pt-2 border-t border-gray-200">
-                                              <div className="text-center">
-                                                {card.series === 'I have my own' ? (
-                                                  <div className="text-lg font-black text-green-700">FREE</div>
-                                                ) : card.series === 'Browse eBay' ? (
-                                                  <div className="text-sm font-bold text-blue-700">Click to Search</div>
-                                                ) : (
-                                                  <>
-                                                    <div className="text-lg font-black text-amber-700">${card.price.toFixed(2)}</div>
-                                                    {card.seller && card.seller !== 'RosterFrame' && (
-                                                      <div className="text-xs text-gray-600">from {card.seller}</div>
-                                                    )}
-                                                  </>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          
-                                          {isSelected && (
-                                            <div className="mt-2 text-center">
-                                              <span className="text-xs font-bold text-green-600">✓ SELECTED</span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
+                                  <CardSelectionGrid
+                                    cards={cardOptions.map(card => ({
+                                      ...card,
+                                      source: card.seller === 'RosterFrame' ? 'inventory' : 
+                                              card.seller === 'eBay' ? 'ebay' : 
+                                              card.series === 'I have my own' || card.series === 'Browse eBay' ? 'custom' : 'ebay'
+                                    }))}
+                                    selectedCard={selectedCard}
+                                    onCardSelect={(card) => selectCard(position.id, card)}
+                                    loading={false}
+                                    playerName={position.playerName}
+                                  />
                                 )}
                               </div>
                             </div>
@@ -890,119 +820,37 @@ export default function BuildAndBuy() {
 
             {/* Step 4: Purchase */}
             {currentStep === 'purchase' && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-black text-amber-900 mb-3">Review Your Order</h2>
-                  <p className="text-lg text-amber-700">Confirm your plaque details and complete your purchase</p>
-                </div>
-                
-                {/* Order Summary */}
-                <div className="bg-amber-50 rounded-lg p-6 mb-8">
-                  <h3 className="text-xl font-bold text-amber-900 mb-4">Order Summary</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span>Plaque ({rosterPositions.length} slots × $1.99)</span>
-                      <span className="font-bold">${(rosterPositions.length * 1.99).toFixed(2)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <span>Cards Total</span>
-                      <span className="font-bold">
-                        ${Object.values(selectedCards).reduce((total, card) => total + card.price, 0).toFixed(2)}
-                      </span>
-                    </div>
-                    
-                    {isPreOrder && !promoApplied && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Pre-order Discount (20% off)</span>
-                        <span className="font-bold">
-                          -${((rosterPositions.length * 1.99 + Object.values(selectedCards).reduce((total, card) => total + card.price, 0)) * 0.20).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between">
-                      <span>Shipping</span>
-                      <span className="font-bold">${shippingOptions[selectedShipping as keyof typeof shippingOptions].price.toFixed(2)}</span>
-                    </div>
-                    
-                    {promoApplied && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Promo Code Applied</span>
-                        <span className="font-bold">SPECIAL PRICE</span>
-                      </div>
-                    )}
-                    
-                    <div className="border-t pt-3 flex justify-between text-xl">
-                      <span className="font-bold">Total</span>
-                      <span className="font-black text-amber-700">${calculateTotalPrice().toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Promo Code */}
-                <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Promo Code
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                      placeholder="Enter promo code"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                      disabled={promoApplied}
-                    />
-                    <button
-                      onClick={applyPromoCode}
-                      disabled={promoApplied}
-                      className={`px-4 py-2 rounded-md ${
-                        promoApplied
-                          ? 'bg-green-600 text-white'
-                          : 'bg-amber-600 text-white hover:bg-amber-700'
-                      }`}
-                    >
-                      {promoApplied ? '✓ Applied' : 'Apply'}
-                    </button>
-                  </div>
-                  {promoError && (
-                    <p className="text-red-600 text-sm mt-1">{promoError}</p>
-                  )}
-                </div>
-                
-                {/* Navigation */}
-                <div className="mb-6">
-                  <button
-                    onClick={() => setCurrentStep('cards')}
-                    className="bg-gray-500 text-white px-6 py-3 rounded-xl text-lg font-semibold shadow-lg hover:bg-gray-600 transform hover:scale-105 transition inline-flex items-center space-x-2"
-                  >
-                    <span>← Back to Card Selection</span>
-                  </button>
-                </div>
-                
-                {/* Payment Form */}
-                <StripePaymentForm
-                  amount={calculateTotalPrice()}
-                  customerInfo={{
-                    teamName: teamName,
-                    email: '',
-                    isGift: isGift
-                  }}
-                  orderDetails={{
+              <div className="w-full">
+                <CheckoutFlowEnhanced
+                  orderSummary={{
                     plaqueName: selectedPlaque?.name || '',
-                    numPositions: rosterPositions.length,
-                    numCards: Object.keys(selectedCards).length,
-                    isPreOrder: isPreOrder,
-                    savings: isPreOrder && !promoApplied ? (rosterPositions.length * 1.99 + Object.values(selectedCards).reduce((total, card) => total + card.price, 0)) * preOrderDiscount : 0,
-                    promoCode: promoApplied ? promoCode : undefined,
-                    goldPosition: goldPosition
+                    plaqueImage: selectedPlaque?.image,
+                    teamName: teamName,
+                    goldPosition: goldPosition,
+                    positions: rosterPositions.map(pos => ({
+                      position: pos.position,
+                      playerName: pos.playerName,
+                      card: selectedCards[pos.id] ? {
+                        name: selectedCards[pos.id].name,
+                        price: selectedCards[pos.id].price,
+                        imageUrl: selectedCards[pos.id].imageUrl,
+                        seller: selectedCards[pos.id].seller,
+                      } : undefined,
+                    })),
+                    subtotal: rosterPositions.length * 1.99 + Object.values(selectedCards).reduce((total, card) => total + card.price, 0),
+                    discount: isPreOrder && !promoApplied ? 
+                      (rosterPositions.length * 1.99 + Object.values(selectedCards).reduce((total, card) => total + card.price, 0)) * preOrderDiscount : 
+                      promoApplied ? (rosterPositions.length * 1.99 + Object.values(selectedCards).reduce((total, card) => total + card.price, 0)) - 1.00 : 0,
+                    discountCode: promoApplied ? promoCode : isPreOrder ? 'PREORDER20' : undefined,
+                    shipping: {
+                      method: shippingOptions[selectedShipping as keyof typeof shippingOptions].name,
+                      price: shippingOptions[selectedShipping as keyof typeof shippingOptions].price,
+                    },
+                    total: calculateTotalPrice(),
                   }}
-                  onPaymentSuccess={handlePaymentSuccess}
-                  onPaymentError={handlePaymentError}
+                  onSuccess={handlePaymentSuccess}
+                  onBack={() => setCurrentStep('cards')}
                 />
-              </div>
             )}
 
             {/* Step 5: Done */}

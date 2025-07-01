@@ -17,6 +17,7 @@ interface PlaquePreviewWithCardsProps {
   goldPosition?: 'top' | 'middle' | 'bottom';
   selectedCards: CardData[];
   maxCards?: number;
+  showCardBacks?: boolean;
 }
 
 // Default text positioning for each plaque style - positioned on the gold nameplate
@@ -99,7 +100,8 @@ export default function PlaquePreviewWithCards({
   className = '',
   goldPosition = 'bottom',
   selectedCards = [],
-  maxCards = 7
+  maxCards = 7,
+  showCardBacks = false
 }: PlaquePreviewWithCardsProps) {
   const stylePositions = DEFAULT_POSITIONS[plaqueStyle as keyof typeof DEFAULT_POSITIONS] || DEFAULT_POSITIONS['dark-maple-wood'];
   const [textPosition, setTextPosition] = useState(stylePositions[goldPosition]);
@@ -159,7 +161,15 @@ export default function PlaquePreviewWithCards({
               transform: 'translate(-50%, -50%)',
             }}
           >
-            {card.imageUrl ? (
+            {showCardBacks ? (
+              // Show card back
+              <div className="w-full h-full bg-gradient-to-br from-red-600 to-red-800 rounded-sm shadow-md flex items-center justify-center">
+                <div className="text-white text-center">
+                  <div className="text-xs font-bold">CARD</div>
+                  <div className="text-xs">BACK</div>
+                </div>
+              </div>
+            ) : card.imageUrl ? (
               <img
                 src={card.imageUrl}
                 alt={card.playerName}

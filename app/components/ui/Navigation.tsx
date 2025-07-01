@@ -15,10 +15,7 @@ interface NavigationProps {
 
 export function Navigation({ 
   links = [
-    { href: '/', label: 'Home' },
-    { href: '/products', label: 'Products' },
-    { href: '/pricing', label: 'Pricing' },
-    { href: '/about', label: 'About' },
+    { href: '/other-lineups', label: 'Other Lineups' },
   ],
   logo = 'Roster Frame'
 }: NavigationProps) {
