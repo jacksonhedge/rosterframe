@@ -846,7 +846,6 @@ export default function BuildAndBuy() {
                   onSuccess={handlePaymentSuccess}
                   onBack={() => setCurrentStep('cards')}
                 />
-              </div>
             )}
 
             {/* Step 5: Done */}
