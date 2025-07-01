@@ -14,6 +14,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key
 # Stripe (LIVE KEYS - Add these in your hosting platform)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_publishable_key
 STRIPE_SECRET_KEY=sk_live_your_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 # Resend Email
 RESEND_API_KEY=re_34zRDLEb_DTPjLyC1TxbXSVzCAbwNLhcW
@@ -44,13 +45,33 @@ Run these SQL scripts in Supabase:
 - [ ] API routes have proper caching
 - [ ] Database queries are optimized
 
+## Recent Updates (December 2024)
+
+### Enhanced Features Deployed
+- **Enhanced Player Selection**: Dropdown shows card availability and price ranges
+- **Improved Card Display**: Unified grid with filtering/sorting for database and eBay cards
+- **Production Stripe Integration**: Enhanced error handling and webhook support
+- **Two-Step Checkout Flow**: Better UX with contact info → payment flow
+- **New API Endpoints**: 
+  - `/api/cards/player-info` - Player card statistics
+  - `/api/stripe-status` - Stripe configuration checker
+
+### Deployment Commands
+```bash
+# Standard deployment to production
+cd /Users/jacksonfitzgerald/Documents/roster-frame && git push origin main
+
+# Manual deployment (if needed)
+npx vercel --prod --yes
+```
+
 ## Deployment Options
 
-### Option 1: Vercel (Recommended)
-1. Push code to GitHub
-2. Connect GitHub repo to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
+### Option 1: Vercel (Recommended - Currently Active)
+1. Push code to GitHub: `git push origin main`
+2. Automatic deployment triggers (2-3 minutes)
+3. Monitor at: https://vercel.com/jackson-fitzgeralds-projects/roster-frame
+4. Live site: https://rosterframe.com
 
 ### Option 2: Netlify
 1. Push code to GitHub
@@ -68,17 +89,26 @@ Run these SQL scripts in Supabase:
 
 ## Post-Deployment Tasks
 
-1. **Test Payment Flow**
-   - Create a real order with a small amount
+1. **Configure Stripe Webhooks**
+   - Go to Stripe Dashboard → Webhooks
+   - Add endpoint: `https://rosterframe.com/api/webhooks/stripe`
+   - Select events: payment_intent.succeeded, payment_intent.payment_failed, checkout.session.completed, charge.refunded
+   - Copy webhook secret to Vercel environment variables
+
+2. **Test Payment Flow**
+   - Use test card: 4242 4242 4242 4242 (in test mode)
+   - Create a real order with a small amount (in production)
    - Verify Stripe webhook works
    - Check email notifications
+   - Test with promo code: ROSTERTEST
 
-2. **Monitor**
+3. **Monitor**
    - Set up error tracking (Sentry)
    - Monitor Supabase usage
    - Track Stripe transactions
+   - Check deployment status at Vercel dashboard
 
-3. **Backups**
+4. **Backups**
    - Enable Supabase automatic backups
    - Export critical data regularly
 
