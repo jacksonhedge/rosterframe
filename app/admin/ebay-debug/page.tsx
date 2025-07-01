@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 
 export default function EbayDebugPage() {
   const [debugData, setDebugData] = useState<any>(null);
