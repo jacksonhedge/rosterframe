@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Navigation } from "../components/ui/Navigation";
-import StripePaymentForm from "../components/StripePaymentForm";
 import PlaquePreview from "../components/PlaquePreview";
 import PreviewGenerator from "../components/PreviewGenerator";
 import PlayerSearchEnhanced from "../components/PlayerSearchEnhanced";
