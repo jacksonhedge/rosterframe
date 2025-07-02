@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import Link from 'next/link';
-import { BannerAd } from './BannerAds';
 
 interface LayoutWithBannersProps {
   children: ReactNode;
@@ -45,36 +44,9 @@ export function LayoutWithBanners({
         </p>
       </div>
 
-      {/* Main Layout with Side Banners */}
-      <div className="relative">
-        {/* Left Banner - Desktop Only */}
-        <div className="hidden xl:block fixed left-2 top-36 w-40 h-[600px] bg-white/90 backdrop-blur-sm rounded-lg shadow-xl z-30 border border-gray-200">
-          <div className="p-3 h-full">
-            <div className="text-center h-full flex flex-col">
-              <p className="text-gray-500 text-xs font-medium mb-2 uppercase tracking-wider">Sponsored</p>
-              <div className="flex-1">
-                <BannerAd position="left" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Banner - Desktop Only */}
-        <div className="hidden xl:block fixed right-2 top-36 w-40 h-[600px] bg-white/90 backdrop-blur-sm rounded-lg shadow-xl z-30 border border-gray-200">
-          <div className="p-3 h-full">
-            <div className="text-center h-full flex flex-col">
-              <p className="text-gray-500 text-xs font-medium mb-2 uppercase tracking-wider">Sponsored</p>
-              <div className="flex-1">
-                <BannerAd position="right" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content - Add top padding only for announcement bar since navbar is in pages */}
-        <div className="pt-10">
-          {children}
-        </div>
+      {/* Main Content - Add top padding only for announcement bar since navbar is in pages */}
+      <div className="pt-10">
+        {children}
       </div>
     </>
   );

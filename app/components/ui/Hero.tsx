@@ -36,29 +36,31 @@ export function Hero({
 }: HeroProps) {
   if (variant === 'centered') {
     return (
-      <section className="relative min-h-[100vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50">
         {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--surface-1)] to-[var(--background)] opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-orange-50/50" />
         
-        <div className="container relative z-10 text-center py-[var(--space-24)]">
+        <div className="container relative z-10 text-center px-4 py-20 md:py-32">
           <ScrollFade>
             {subtitle && (
-              <p className="text-[var(--color-primary)] font-[var(--font-medium)] mb-[var(--space-4)]">
+              <p className="text-amber-700 font-semibold mb-4">
                 {subtitle}
               </p>
             )}
-            <h1 className="text-[var(--text-5xl)] md:text-[4rem] font-[var(--font-bold)] mb-[var(--space-6)] leading-tight">
-              <span className="gradient-text">{title}</span>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 leading-tight">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
+                {title}
+              </span>
             </h1>
             {description && (
-              <p className="text-[var(--text-xl)] text-[var(--text-secondary)] max-w-2xl mx-auto mb-[var(--space-8)]">
+              <p className="text-xl md:text-2xl lg:text-3xl text-gray-700 max-w-3xl mx-auto mb-10">
                 {description}
               </p>
             )}
           </ScrollFade>
 
           <ScrollFade delay={200}>
-            <div className="flex flex-wrap gap-[var(--space-4)] justify-center">
+            <div className="flex flex-wrap gap-4 justify-center mb-12">
               {primaryAction && (
                 <Button
                   size="lg"
@@ -82,7 +84,7 @@ export function Hero({
           </ScrollFade>
 
           {children && (
-            <ScrollFade delay={400} className="mt-[var(--space-12)]">
+            <ScrollFade delay={400}>
               {children}
             </ScrollFade>
           )}
@@ -91,7 +93,7 @@ export function Hero({
         {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
           <svg
-            className="w-6 h-6 text-[var(--text-tertiary)]"
+            className="w-6 h-6 text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

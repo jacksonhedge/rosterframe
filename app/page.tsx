@@ -67,13 +67,13 @@ export default function Home() {
           href: "/marketplace" 
         }}
       >
-        <ScrollFade delay={600} className="mt-12">
+        <ScrollFade delay={600} className="mt-16">
           <div className="relative mx-auto max-w-6xl">
-            <div className="flex items-center justify-center gap-8 flex-wrap lg:flex-nowrap">
+            <div className="flex items-center justify-center gap-4 lg:gap-8 flex-wrap lg:flex-nowrap scale-75 md:scale-90 lg:scale-100">
               {/* Phone with Fantasy League */}
               <div className="relative">
-                <div className="bg-gray-800 rounded-[3rem] p-3 shadow-2xl">
-                  <div className="bg-white rounded-[2.5rem] overflow-hidden w-[280px] h-[600px] relative">
+                <div className="bg-gray-800 rounded-[2rem] p-1.5 shadow-2xl">
+                  <div className="bg-white rounded-[1.5rem] overflow-hidden w-[200px] h-[400px] relative">
                     {/* Placeholder for phone/fantasy league image */}
                     <div className="w-full h-full bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center">
                       <div className="text-center p-4">
@@ -107,16 +107,16 @@ export default function Home() {
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center">
-                <svg className="w-16 h-16 text-amber-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center px-2">
+                <svg className="w-12 h-12 md:w-16 md:h-16 text-amber-600 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </div>
 
               {/* Framed Roster */}
               <div className="relative">
-                <div className="bg-white rounded-lg shadow-2xl p-2">
-                  <div className="relative w-[400px] h-[300px] bg-gradient-to-br from-amber-50 to-yellow-50 rounded flex items-center justify-center">
+                <div className="bg-white rounded-lg shadow-2xl p-1.5">
+                  <div className="relative w-[320px] h-[240px] md:w-[360px] md:h-[270px] bg-gradient-to-br from-amber-50 to-yellow-50 rounded flex items-center justify-center">
                     {/* Placeholder for framed team image */}
                     <div className="text-center p-6">
                       <p className="text-gray-500 text-sm mb-2">Framed Display</p>
